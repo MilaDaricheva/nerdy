@@ -37,13 +37,9 @@ class OrdersBucket:
 
     def timeInPosition(self, pos):
         # return minutes passed after fill
-        if pos[0]:
-            # datetime.datetime(2021, 4, 27, 15, 56, 6, 435261, tzinfo=datetime.timezone.utc)
-            fillTime = pos[0].fills[0].time
-            nowTime = datetime.now(tz=tz.tzlocal())
-            return nowTime - fillTime
-        else:
-            return 0
+        fillTime = self.timeOf1Trade
+        nowTime = datetime.now(tz=tz.tzlocal())
+        return nowTime - fillTime
 
     def cancelAll(self):
         for opO in self.ib.openOrders():
@@ -65,7 +61,7 @@ class OrdersBucket:
                 self.ib.waitOnUpdate()
         if self.ib.positions()[0].position < 0:
             # buy to close all
-            mOrder = MarketOrder('BUY', self.ib.positions()[0].position, tif='GTC', outsideRth=True)
+            mOrder = MarketOrder('BUY', abs(self.ib.positions()[0].position), tif='GTC', outsideRth=True)
             closingTrade = self.ib.placeOrder(self.contract, mOrder)
             while not closingTrade.isDone():
                 self.ib.waitOnUpdate()
@@ -80,7 +76,7 @@ class OrdersBucket:
 
         # logging.info(self.ib.openOrders())
 
-        logging.info(self.ib.openTrades())
+        # logging.info(self.ib.openTrades())
 
         self.firstLong = []
         self.secondLong = []

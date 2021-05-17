@@ -13,9 +13,9 @@ class VpTouches:
         if len(self.longT) > 24:
             # remove old element
             self.longT.pop(0)
-        logging.info("---------------------------")
-        logging.info("Long Touch")
-        logging.info(self.longT)
+        # logging.info("---------------------------")
+        #logging.info("Long Touch")
+        # logging.info(self.longT)
 
     def countLongT(self):
         a = np.array(self.longT)
@@ -27,9 +27,9 @@ class VpTouches:
         if len(self.shortT) > 24:
             # remove old element
             self.shortT.pop(0)
-        logging.info("---------------------------")
-        logging.info("Short Touch")
-        logging.info(self.shortT)
+        # logging.info("---------------------------")
+        #logging.info("Short Touch")
+        # logging.info(self.shortT)
 
     def countShortT(self):
         a = np.array(self.shortT)

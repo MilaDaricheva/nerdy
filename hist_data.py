@@ -12,13 +12,17 @@ logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO
 
 class HistData:
 
-    def transform_stoch_val(self, x):
+    def transform_val(self, x):
         return round(100*x, 2)
+
+    def fillEma(self):
+        ema_ind = EMAIndicator(close=self.bars['close'], window=540, fillna=True)
+        self.bars['ema_ind'] = ema_ind.ema_indicator().apply(self.transform_val)
 
     def fillStoch(self, w, sl1, sl2):
         stoch_ind = StochRSIIndicator(close=self.bars['close'], window=w, smooth1=sl1, smooth2=sl2, fillna=True)
-        self.bars['stoch_ind_k'] = stoch_ind.stochrsi_k().apply(self.transform_stoch_val)
-        self.bars['stoch_ind_d'] = stoch_ind.stochrsi_d().apply(self.transform_stoch_val)
+        self.bars['stoch_ind_k'] = stoch_ind.stochrsi_k().apply(self.transform_val)
+        self.bars['stoch_ind_d'] = stoch_ind.stochrsi_d().apply(self.transform_val)
 
     def fillStochStrategy(self):
         stoch_sensitivity = 1
@@ -48,6 +52,7 @@ class HistData:
     def __init__(self, bars):
 
         self.bars = dropna(util.df(bars))
+        self.fillEma()
         self.fillStoch(420, 90, 90)
         self.fillStochStrategy()
         self.l_lows = self.bars['low'].tail(60).min()
@@ -58,7 +63,9 @@ class HistData:
         lastDate.replace(tzinfo=ptc)
 
         self.timeCreated = lastDate.astimezone(tz.tzutc())
-        logging.info(bars[-1])
+        # logging.info("---------")
+        # logging.info("Last Bar Historical")
+        # logging.info(bars[-1])
 
     def printLastN(self, n):
         logging.info(self.bars.tail(n))

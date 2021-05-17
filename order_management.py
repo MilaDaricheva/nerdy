@@ -11,8 +11,6 @@ logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO
 class OrderManagement:
     def noPosition(self):
         return not self.ib.positions()
-    # full pos, pending orders, cancel orders, tight stop
-    # time in long trade, time in short trade
 
     def hasLongPos(self):
         if self.noPosition():
@@ -57,29 +55,35 @@ class OrderManagement:
             # close all positions and cancer all orders
             self.oBucket.closeAll()
             self.oBucket.flipLong = True
+            self.oBucket.firstShort = []
+            self.oBucket.secondShort = []
+            self.oBucket.thirdShort = []
 
         canLong = longBigTouch and self.noPosition() and not self.oBucket.firstLong and self.sm.timeIsOk()
 
-        self.printLog()
-        logging.info("---------------------------")
-        logging.info("Long Big Touch")
-        logging.info(longBigTouch)
-        logging.info(canLong)
-        logging.info("---------------------------")
+        # vself.printLog()
+        # logging.info("---------------------------")
+        # logging.info("Long Big Touch")
+        # logging.info(longBigTouch)
+        # logging.info(canLong)
+        # logging.info("---------------------------")
 
         if (canLong or self.oBucket.flipLong) and self.sm.onlyLong() and not self.sm.noLong():
             # if (canTrade or flipLong) and onlyLongs and aroundVPLevel > 0 and aroundVPLevelToShort == 0 and not noLongs
             self.oBucket.flipLong = False
-            logging.info("Start Long1 ")
+            self.printLog()
+
+            logging.info("Start Long1")
             lmpPrice = self.specialRound(self.arVPLong + 1)
-            profPrice = self.specialRound(lmpPrice + 10)
-            stopPrice = self.specialRound(lmpPrice - 23)
+            profPrice = self.specialRound(lmpPrice + 75)
+            stopPrice = self.specialRound(lmpPrice - 21)
             bracket = self.ib.bracketOrder(action='BUY', quantity=self.scale1Size, limitPrice=lmpPrice, takeProfitPrice=profPrice, stopLossPrice=stopPrice, tif='GTC', outsideRth=True)
+            bracket.parent.orderType = 'MKT'
             for o in bracket:
                 trade = self.ib.placeOrder(self.contract, o)
                 self.oBucket.setFirstLong(trade)
 
-            logging.info("Start Long2 ")
+            logging.info("Start Long2")
             lmpPrice2 = self.specialRound(self.arVPLong - 4)
             profPrice2 = self.specialRound(lmpPrice2 + 10)
             bracket2 = self.ib.bracketOrder(action='BUY', quantity=self.scale2Size, limitPrice=lmpPrice2, takeProfitPrice=profPrice2, stopLossPrice=stopPrice, tif='GTC', outsideRth=True)
@@ -87,7 +91,7 @@ class OrderManagement:
                 trade = self.ib.placeOrder(self.contract, o)
                 self.oBucket.setSecondLong(trade)
 
-            logging.info("Start Long3 ")
+            logging.info("Start Long3")
             lmpPrice3 = self.specialRound(self.arVPLong - 10)
             profPrice3 = self.specialRound(lmpPrice3 + 20)
             bracket3 = self.ib.bracketOrder(action='BUY', quantity=self.scale3Size, limitPrice=lmpPrice3, takeProfitPrice=profPrice3, stopLossPrice=stopPrice, tif='GTC', outsideRth=True)
@@ -97,13 +101,13 @@ class OrderManagement:
 
             self.oBucket.rememberVPLevel(self.specialRound(self.arVPLong))
 
-            logging.info("---------------------------")
-            logging.info("Long Order Prices")
-            logging.info(lmpPrice)
-            logging.info(profPrice)
-            logging.info(stopPrice)
-            logging.info(self.rtd.getiLoc(-1))
-            logging.info("---------------------------")
+            # logging.info("---------------------------")
+            #logging.info("Long Order Prices")
+            # logging.info(lmpPrice)
+            # logging.info(profPrice)
+            # logging.info(stopPrice)
+            # logging.info(self.rtd.getiLoc(-1))
+            # logging.info("---------------------------")
 
     def manageShorts(self):
 
@@ -112,56 +116,62 @@ class OrderManagement:
         # flip short
         # and not noShorts and onlyShorts
         if self.hasLongPos() and shortBigTouch and not self.sm.noShort() and self.sm.onlyShort():
-            # close all positions and cancer all orders
-            self.oBucket.closeAll()
-            self.oBucket.flipShort = True
+            if not (self.sm.emaUp() and self.sm.onlyLong()):
+                # close all positions and cancer all orders
+                self.oBucket.closeAll()
+                self.oBucket.flipShort = True
+                self.oBucket.firstLong = []
+                self.oBucket.secondLong = []
+                self.oBucket.thirdLong = []
 
         canShort = shortBigTouch and self.noPosition() and not self.oBucket.firstShort and self.sm.timeIsOk()
 
-        logging.info("---------------------------")
-        self.printLog()
-        logging.info("Short Big Touch")
-        logging.info(shortBigTouch)
-        logging.info(canShort)
-        logging.info("---------------------------")
+        # logging.info("---------------------------")
+        # self.printLog()
+        #logging.info("Short Big Touch")
+        # logging.info(shortBigTouch)
+        # logging.info(canShort)
+        # logging.info("---------------------------")
 
         if (canShort or self.oBucket.flipShort) and self.sm.onlyShort() and not self.sm.noShort():
             # and onlyShorts and aroundVPLevelToShort > 0 and aroundVPLevel == 0 and not noShorts
-            self.oBucket.flipShort = False
+            if not (self.sm.emaUp() and self.sm.onlyLong()):
+                self.oBucket.flipShort = False
+                self.printLog()
+                logging.info("Start Short")
+                lmpPrice = self.specialRound(self.arVPShort - 1)
+                profPrice = self.specialRound(lmpPrice - 35)
+                stopPrice = self.specialRound(lmpPrice + 21)
+                bracket = self.ib.bracketOrder(action='SELL', quantity=self.scale1Size, limitPrice=lmpPrice, takeProfitPrice=profPrice, stopLossPrice=stopPrice, tif='GTC', outsideRth=True)
+                bracket.parent.orderType = 'MKT'
+                for o in bracket:
+                    trade = self.ib.placeOrder(self.contract, o)
+                    self.oBucket.setFirstShort(trade)
 
-            logging.info("Start Short")
-            lmpPrice = self.specialRound(self.arVPShort - 1)
-            profPrice = self.specialRound(lmpPrice - 10)
-            stopPrice = self.specialRound(lmpPrice + 23)
-            bracket = self.ib.bracketOrder(action='SELL', quantity=self.scale1Size, limitPrice=lmpPrice, takeProfitPrice=profPrice, stopLossPrice=stopPrice, tif='GTC', outsideRth=True)
-            for o in bracket:
-                trade = self.ib.placeOrder(self.contract, o)
-                self.oBucket.setFirstShort(trade)
+                logging.info("Start Short2")
+                lmpPrice2 = self.specialRound(self.arVPShort + 3)
+                profPrice2 = self.specialRound(lmpPrice2 - 10)
+                bracket2 = self.ib.bracketOrder(action='SELL', quantity=self.scale2Size, limitPrice=lmpPrice2, takeProfitPrice=profPrice2, stopLossPrice=stopPrice, tif='GTC', outsideRth=True)
+                for o in bracket2:
+                    trade = self.ib.placeOrder(self.contract, o)
+                    self.oBucket.setSecondShort(trade)
 
-            logging.info("Start Short2")
-            lmpPrice2 = self.specialRound(self.arVPShort + 3)
-            profPrice2 = self.specialRound(lmpPrice2 - 10)
-            bracket2 = self.ib.bracketOrder(action='SELL', quantity=self.scale2Size, limitPrice=lmpPrice2, takeProfitPrice=profPrice2, stopLossPrice=stopPrice, tif='GTC', outsideRth=True)
-            for o in bracket2:
-                trade = self.ib.placeOrder(self.contract, o)
-                self.oBucket.setSecondShort(trade)
+                logging.info("Start Short3")
+                lmpPrice3 = self.specialRound(self.arVPShort + 10)
+                profPrice3 = self.specialRound(lmpPrice3 - 20)
+                bracket3 = self.ib.bracketOrder(action='SELL', quantity=self.scale3Size, limitPrice=lmpPrice3, takeProfitPrice=profPrice3, stopLossPrice=stopPrice, tif='GTC', outsideRth=True)
+                for o in bracket3:
+                    trade = self.ib.placeOrder(self.contract, o)
+                    self.oBucket.setThirdShort(trade)
 
-            logging.info("Start Short3")
-            lmpPrice3 = self.specialRound(self.arVPShort + 10)
-            profPrice3 = self.specialRound(lmpPrice3 - 20)
-            bracket3 = self.ib.bracketOrder(action='SELL', quantity=self.scale3Size, limitPrice=lmpPrice3, takeProfitPrice=profPrice3, stopLossPrice=stopPrice, tif='GTC', outsideRth=True)
-            for o in bracket3:
-                trade = self.ib.placeOrder(self.contract, o)
-                self.oBucket.setThirdShort(trade)
-
-            self.oBucket.rememberVPLevel(self.specialRound(self.arVPShort))
-            logging.info("---------------------------")
-            logging.info("Short Order Prices")
-            logging.info(lmpPrice)
-            logging.info(profPrice)
-            logging.info(stopPrice)
-            logging.info(self.rtd.getiLoc(-1))
-            logging.info("---------------------------")
+                self.oBucket.rememberVPLevel(self.specialRound(self.arVPShort))
+                # logging.info("---------------------------")
+                #logging.info("Short Order Prices")
+                # logging.info(lmpPrice)
+                # logging.info(profPrice)
+                # logging.info(stopPrice)
+                # logging.info(self.rtd.getiLoc(-1))
+                # logging.info("---------------------------")
 
     def goDoBusiness(self):
         # if self.ib.positions() != []:

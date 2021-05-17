@@ -18,6 +18,24 @@ logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO
 
 
 class AlgoVP:
+    def onPositionChange(self, trade, fill):
+        logging.info("---------------------------")
+        logging.info("Position Change")
+        logging.info(trade)
+        logging.info(fill)
+        if trade.order.action == 'BUY' and not self.ib.positions():
+            # short closed
+            self.oBucket.cancelAll()
+            self.oBucket.firstShort = []
+            self.oBucket.secondShort = []
+            self.oBucket.thirdShort = []
+        if trade.order.action == 'SELL' and not self.ib.positions():
+            # long closed
+            self.oBucket.cancelAll()
+            self.oBucket.firstLong = []
+            self.oBucket.secondLong = []
+            self.oBucket.thirdLong = []
+
     def onErrorEvent(self, reqId, errorCode, errorString, contract):
         logging.info("---------------------------")
         logging.info("My error handler here")
@@ -46,19 +64,19 @@ class AlgoVP:
             rtDataOk = nowTime - twSec <= cuttentBarTime
             histDataOk = nowTime - twoMin <= histBarTime
 
-            logging.info("---------------------------")
-            logging.info("Time Data")
-            logging.info(cuttentBarTime)
-            logging.info(nowTime - twSec)
-            logging.info(rtDataOk)
-            logging.info(nowTime - twoMin)
-            logging.info(histDataOk)
-            logging.info(bars[-1])
-            logging.info("---------------------------")
+            # logging.info("---------------------------")
+            # logging.info("Time Data")
+            # logging.info(cuttentBarTime)
+            # logging.info(nowTime - twSec)
+            # logging.info(rtDataOk)
+            # logging.info(nowTime - twoMin)
+            # logging.info(histDataOk)
+            # logging.info(bars[-1])
+            # logging.info("---------------------------")
 
             if histDataOk:
                 if rtDataOk:
-                    self.min_data.printLastN(4)
+                    # self.min_data.printLastN(4)
 
                     rtd = RealTimeData(bars, self.min_data, self.vp_levels)
 
@@ -68,31 +86,32 @@ class AlgoVP:
 
                     om.goDoBusiness()
 
-                    logging.info("bucket")
-                    logging.info(self.oBucket.firstLong)
-                    logging.info(self.oBucket.firstShort)
+                    # logging.info("bucket")
+                    # logging.info(self.oBucket.firstLong)
+                    # logging.info(self.oBucket.firstShort)
 
             else:
                 # request Hist Data Again
                 logging.info("---------------------------")
                 logging.info("Renew Hist Data Subscription")
-                # self.ib.cancelHistoricalData(self.min_bars)
-                #self.min_bars = None
-                # self.min_bars = self.ib.reqHistoricalData(
-                #    self.contract, endDateTime='', durationStr='2 D',
-                #    barSizeSetting='1 min', whatToShow='MIDPOINT', useRTH=False,
-                #    formatDate=1,
-                #    keepUpToDate=True)
+                self.ib.cancelHistoricalData(self.min_bars)
+                self.min_bars = None
+                self.min_bars = self.ib.reqHistoricalData(
+                    self.contract, endDateTime='', durationStr='2 D',
+                    barSizeSetting='1 min', whatToShow='MIDPOINT', useRTH=False,
+                    formatDate=1,
+                    keepUpToDate=True)
 
-                #self.min_data = HistData(self.min_bars)
+                self.min_data = HistData(self.min_bars)
                 self.min_data.printLastN(4)
 
-                #self.min_bars.updateEvent += self.onMinBarUpdate
+                self.min_bars.updateEvent += self.onMinBarUpdate
 
     def __init__(self):
         self.ib = IB()
         self.ib.connect('127.0.0.1', 7496, clientId=1)
         self.contract = Future('MES', '20210618', 'GLOBEX', 'MESM1', '5', 'USD')
+        self.ib.qualifyContracts(self.contract)
 
         self.min_bars = self.ib.reqHistoricalData(
             self.contract, endDateTime='', durationStr='2 D',
@@ -121,6 +140,8 @@ class AlgoVP:
 
         rt_bars = self.ib.reqRealTimeBars(self.contract, 5, 'MIDPOINT', False)
         rt_bars.updateEvent += self.onRTBarUpdate
+
+        self.ib.execDetailsEvent += self.onPositionChange
 
         self.ib.errorEvent += self.onErrorEvent
 
