@@ -1,9 +1,10 @@
 from ib_insync import util
 from ta.utils import dropna
 import pandas as pd
-import logging
+#import logging
+#import logging.handlers as handlers
 
-logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO)
+#logging.basicConfig(filename='RT_data.log', encoding='utf-8', level=logging.INFO)
 
 
 class RealTimeData:
@@ -17,7 +18,7 @@ class RealTimeData:
         high = self.bars.iloc[-1]['high']
         close = self.bars.iloc[-1]['close']
         for i in range(vp_size):
-            if (low < vp[i] + 1.5) and (close > vp[i]) and (high - low < 5) and (lowest_low > vp[i] - 1):
+            if (low <= vp[i] + 3) and (close > vp[i]) and (high - low < 5) and (lowest_low > vp[i] - 1):
                 aroundVPLevel = vp[i]
         return aroundVPLevel
 
@@ -29,18 +30,19 @@ class RealTimeData:
         low = self.bars.iloc[-1]['low']
         high = self.bars.iloc[-1]['high']
         for i in range(vp_size):
-            if (high < vp[i] + 1) and (high > vp[i] - 1.5) and (high - low < 5) and (highest_high < vp[i] + 1):
+            if (high < vp[i] + 1) and (high >= vp[i] - 3) and (high - low < 5) and (highest_high < vp[i] + 1):
                 aroundVPLevel = vp[i]
         return aroundVPLevel
 
-    def __init__(self, bars, min_data, vp_levels):
+    def __init__(self, bars, min_data, vp_levels, logger):
+        self.mylog = logger
         # 12 bars per min
         self.bars = dropna(util.df(bars))
         self.min_data = min_data
         self.vp_levels = vp_levels
 
     def printLastN(self, n):
-        logging.info(self.bars.tail(n))
+        self.mylog.info(self.bars.tail(n))
 
     def getiLoc(self, n):
         return self.bars.iloc[n]

@@ -5,9 +5,10 @@ from ta.trend import EMAIndicator
 import pandas as pd
 from datetime import datetime, timedelta, time
 from dateutil import tz
-import logging
+#import logging
+#import logging.handlers as handlers
 
-logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO)
+#logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO)
 
 
 class HistData:
@@ -49,8 +50,8 @@ class HistData:
         result = pd.concat([self.bars, stoch_df], axis=1, join="inner")
         self.bars = result
 
-    def __init__(self, bars):
-
+    def __init__(self, bars, logger):
+        self.mylog = logger
         self.bars = dropna(util.df(bars))
         self.fillEma()
         self.fillStoch(420, 90, 90)
@@ -63,12 +64,12 @@ class HistData:
         lastDate.replace(tzinfo=ptc)
 
         self.timeCreated = lastDate.astimezone(tz.tzutc())
-        # logging.info("---------")
-        # logging.info("Last Bar Historical")
-        # logging.info(bars[-1])
+        # self.mylog.info("---------")
+        # self.mylog.info("Last Bar Historical")
+        # self.mylog.info(bars[-1])
 
     def printLastN(self, n):
-        logging.info(self.bars.tail(n))
+        self.mylog.info(self.bars.tail(n))
 
     def getLastN(self, n):
         return self.bars.tail(n)

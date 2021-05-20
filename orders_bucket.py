@@ -1,9 +1,10 @@
 from ib_insync import MarketOrder, BracketOrder
 from datetime import datetime, timedelta, time
 from dateutil import tz
-import logging
+#import logging
+#import logging.handlers as handlers
 
-logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO)
+#logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO)
 
 
 class OrdersBucket:
@@ -35,48 +36,109 @@ class OrdersBucket:
     def rememberVPLevel(self, level):
         self.rememberVPL = level
 
-    def timeInPosition(self, pos):
+    def rememberBEstop(self, level):
+        self.beStop = level
+
+    def timeInPosition(self):
         # return minutes passed after fill
         fillTime = self.timeOf1Trade
         nowTime = datetime.now(tz=tz.tzlocal())
+        self.mylog.info("---------------------------")
+        self.mylog.info('Time in Position')
+        self.mylog.info(nowTime - fillTime)
         return nowTime - fillTime
 
+    def cancel3d(self, direction):
+        self.mylog.info("---------------------------")
+        self.mylog.info('Cancel 3d')
+        if direction > 0:
+            for tr in self.thirdLong:
+                if tr.orderStatus.status == 'Submitted':
+                    self.mylog.info('Sending Cancel')
+                    cancelTrade = self.ib.cancelOrder(tr.order)
+                    self.ib.sleep(5)
+                    # while not cancelTrade.isDone():
+                    #    self.ib.waitOnUpdate()
+            self.thirdLong = []
+        if direction < 0:
+            for tr in self.thirdShort:
+                if tr.orderStatus.status == 'Submitted':
+                    self.mylog.info('Sending Cancel')
+                    cancelTrade = self.ib.cancelOrder(tr.order)
+                    self.ib.sleep(5)
+                    # while not cancelTrade.isDone():
+                    #    self.ib.waitOnUpdate()
+            self.thirdShort = []
+
     def cancelAll(self):
-        for opO in self.ib.openOrders():
-            cancelTrade = self.ib.cancelOrder(opO)
-            while not cancelTrade.isDone():
-                self.ib.waitOnUpdate()
+        self.mylog.info("---------------------------")
+        self.mylog.info('Cancel All')
+        self.mylog.info(self.ib.openTrades())
+
+        for opT in self.ib.openTrades():
+            if opT.orderStatus.status == 'Submitted':
+                self.mylog.info('Sending Cancel')
+                cancelTrade = self.ib.cancelOrder(opT.order)
+                self.ib.sleep(5)
+                # while not cancelTrade.isDone():
+                #    self.ib.waitOnUpdate()
+        # self.ib.sleep(5)
+        self.firstLong = []
+        self.secondLong = []
+        self.thirdLong = []
+        self.firstShort = []
+        self.secondShort = []
+        self.thirdShort = []
         # show open orders
-        logging.info("---------------------------")
-        logging.info('Should be no orders')
-        logging.info(self.ib.openOrders())
+        self.mylog.info("---------------------------")
+        self.mylog.info('Should be no orders')
+        self.mylog.info(self.ib.openOrders())
 
     def closeAll(self):
         self.cancelAll()
+        self.mylog.info("---------------------------")
+        self.mylog.info('Close All')
         if self.ib.positions()[0].position > 0:
             # sell to close all
             mOrder = MarketOrder('SELL', self.ib.positions()[0].position, tif='GTC', outsideRth=True)
             closingTrade = self.ib.placeOrder(self.contract, mOrder)
-            while not closingTrade.isDone():
-                self.ib.waitOnUpdate()
+            self.ib.sleep(5)
+            # while not closingTrade.isDone():
+            #    self.ib.waitOnUpdate()
         if self.ib.positions()[0].position < 0:
             # buy to close all
             mOrder = MarketOrder('BUY', abs(self.ib.positions()[0].position), tif='GTC', outsideRth=True)
             closingTrade = self.ib.placeOrder(self.contract, mOrder)
-            while not closingTrade.isDone():
-                self.ib.waitOnUpdate()
+            self.ib.sleep(5)
+            # while not closingTrade.isDone():
+            #    self.ib.waitOnUpdate()
+        # self.ib.sleep(5)
         # show open trades
-        logging.info("---------------------------")
-        logging.info('Should be no trades')
-        logging.info(self.ib.openTrades())
+        self.mylog.info("---------------------------")
+        self.mylog.info('Should be no trades')
+        self.mylog.info(self.ib.openTrades())
 
-    def __init__(self, ib, contract):
+    def moveStops(self, level):
+        self.mylog.info("---------------------------")
+        self.mylog.info('Move Stops')
+        for opO in self.ib.openOrders():
+            # move stops
+            if opO.auxPrice > 0:
+                opO.auxPrice = level
+                updatedOrder = self.ib.placeOrder(self.contract, opO)
+                self.ib.sleep(5)
+                # while not updatedOrder.isDone():
+                #    self.ib.waitOnUpdate()
+        # self.ib.sleep(10)
+
+    def __init__(self, ib, contract, logger):
+        self.mylog = logger
         self.ib = ib
         self.contract = contract
 
-        # logging.info(self.ib.openOrders())
+        # self.mylog.info(self.ib.openOrders())
 
-        # logging.info(self.ib.openTrades())
+        # self.mylog.info(self.ib.openTrades())
 
         self.firstLong = []
         self.secondLong = []
@@ -86,6 +148,7 @@ class OrdersBucket:
         self.thirdShort = []
 
         self.rememberVPL = 0
+        self.beStop = 0
 
         self.timeOf1Trade = datetime.now(tz=tz.tzlocal())
         self.timeOf2Trade = datetime.now(tz=tz.tzlocal())
@@ -93,3 +156,7 @@ class OrdersBucket:
 
         self.flipLong = False
         self.flipShort = False
+
+        self.scale1Size = 1
+        self.scale2Size = 1
+        self.scale3Size = 1

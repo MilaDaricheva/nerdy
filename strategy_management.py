@@ -3,9 +3,10 @@ from ta.utils import dropna
 from datetime import datetime, timedelta, time
 from dateutil import tz
 import pandas as pd
-import logging
+#import logging
+#import logging.handlers as handlers
 
-logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO)
+#logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO)
 
 
 class StrategyManagement:
@@ -20,10 +21,16 @@ class StrategyManagement:
             return False
 
     def emaUp(self):
-        return self.ema > self.ema[-60]
+        return self.min_data.getiLoc(-1)['ema_ind'] > self.min_data.getiLoc(-60)['ema_ind']
 
     def emaDown(self):
-        return self.ema < self.ema[-60]
+        return self.min_data.getiLoc(-1)['ema_ind'] < self.min_data.getiLoc(-60)['ema_ind']
+
+    def emaUpP(self):
+        return self.min_data.getiLoc(-60)['ema_ind'] > self.min_data.getiLoc(-120)['ema_ind']
+
+    def emaDownP(self):
+        return self.min_data.getiLoc(-60)['ema_ind'] < self.min_data.getiLoc(-120)['ema_ind']
 
     # get BigD - 30min
     def bigD(self):
@@ -42,14 +49,16 @@ class StrategyManagement:
         return self.fK > 85 or self.fD > 85 or self.fInShort
 
     def noLong(self):
-        #noLongs = bigK > 90 and bigD > 90
-        return self.fK > 90 and self.fD > 90
+        #bigK > 90 or bigD > 90
+        return self.fK > 90 or self.fD > 90
 
     def noShort(self):
-        #noShorts = bigK < 25 and bigD < 25
-        return self.fK < 25 and self.fD < 25
+        #noShorts = bigK < 25 or bigD < 25
+        return self.fK < 25 or self.fD < 25
 
-    def __init__(self, bars, min_data, vp_levels):
+    def __init__(self, bars, min_data, vp_levels, logger):
+        self.mylog = logger
+
         self.bars = dropna(util.df(bars))
 
         self.min_data = min_data
