@@ -73,28 +73,24 @@ class OrdersBucket:
             self.thirdShort = []
 
     def cancelAll(self):
-        self.mylog.info("---------------------------")
-        self.mylog.info('Cancel All')
-        self.mylog.info(self.ib.openTrades())
+        if self.ib.openTrades():
+            self.mylog.info("---------------------------")
+            self.mylog.info('Cancel All')
+            self.mylog.info(self.ib.openTrades())
 
-        for opT in self.ib.openTrades():
-            if opT.orderStatus.status == 'Submitted':
-                self.mylog.info('Sending Cancel')
-                cancelTrade = self.ib.cancelOrder(opT.order)
-                # self.ib.sleep(5)
-                # while not cancelTrade.isDone():
-                #    self.ib.waitOnUpdate()
-        self.ib.sleep(5)
-        self.firstLong = []
-        self.secondLong = []
-        self.thirdLong = []
-        self.firstShort = []
-        self.secondShort = []
-        self.thirdShort = []
-        # show open orders
-        self.mylog.info("---------------------------")
-        self.mylog.info('Should be no orders')
-        self.mylog.info(self.ib.openOrders())
+            for opT in self.ib.openTrades():
+                if opT.orderStatus.status == 'Submitted':
+                    self.mylog.info('Sending Cancel')
+                    cancelTrade = self.ib.cancelOrder(opT.order)
+                    # self.ib.sleep(5)
+                    # while not cancelTrade.isDone():
+                    #    self.ib.waitOnUpdate()
+            self.ib.sleep(5)
+
+            # show open orders
+            self.mylog.info("---------------------------")
+            self.mylog.info('Should be no orders')
+            self.mylog.info(self.ib.openOrders())
 
     def closeAll(self):
         self.cancelAll()
@@ -119,6 +115,13 @@ class OrdersBucket:
         self.mylog.info("---------------------------")
         self.mylog.info('Should be no trades')
         self.mylog.info(self.ib.openTrades())
+
+        self.firstLong = []
+        self.secondLong = []
+        self.thirdLong = []
+        self.firstShort = []
+        self.secondShort = []
+        self.thirdShort = []
 
     def moveStops(self, level):
         self.mylog.info("---------------------------")
