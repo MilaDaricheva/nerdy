@@ -85,7 +85,7 @@ class OrdersBucket:
                     # self.ib.sleep(5)
                     # while not cancelTrade.isDone():
                     #    self.ib.waitOnUpdate()
-            self.ib.sleep(5)
+            # self.ib.sleep(5)
 
             # show open orders
             self.mylog.info("---------------------------")
@@ -94,13 +94,14 @@ class OrdersBucket:
 
     def closeAll(self):
         self.cancelAll()
+        self.ib.sleep(5)
         self.mylog.info("---------------------------")
         self.mylog.info('Close All')
         if self.ib.positions()[0].position > 0:
             # sell to close all
             mOrder = MarketOrder('SELL', self.ib.positions()[0].position, tif='GTC', outsideRth=True)
             closingTrade = self.ib.placeOrder(self.contract, mOrder)
-            self.ib.sleep(5)
+
             # while not closingTrade.isDone():
             #    self.ib.waitOnUpdate()
         if self.ib.positions()[0].position < 0:

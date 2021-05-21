@@ -85,7 +85,7 @@ class OrderManagement:
         # self.mylog.info(canLong)
         # self.mylog.info("---------------------------")
 
-        if (canLong or self.oBucket.flipLong) and ((self.sm.onlyLong() and not self.sm.noLong()) or self.sm.emaUp()):
+        if (canLong or self.oBucket.flipLong) and not self.oBucket.firstLong and ((self.sm.onlyLong() and not self.sm.noLong()) or self.sm.emaUp()):
             # if (canTrade or flipLong) and aroundVPLevel > 0 and aroundVPLevelToShort == 0 and ((onlyLongs and not noLongs) or emaUp)
             self.oBucket.flipLong = False
             self.printLog()
@@ -159,7 +159,7 @@ class OrderManagement:
         # self.mylog.info(canShort)
         # self.mylog.info("---------------------------")
 
-        if (canShort or self.oBucket.flipShort) and ((self.sm.onlyShort() and not self.sm.noShort()) or self.sm.emaDown()):
+        if (canShort or self.oBucket.flipShort) and not self.oBucket.firstShort and ((self.sm.onlyShort() and not self.sm.noShort()) or self.sm.emaDown()):
             # and ((not noShorts and onlyShorts) or emaDown)
             if not (self.sm.emaUp() and self.sm.onlyLong()):
                 # if not (emaUp and onlyLongs)
