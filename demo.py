@@ -15,7 +15,6 @@ import logging.handlers as handlers
 
 # nest_asyncio.apply()
 
-
 #logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO)
 
 
@@ -43,8 +42,6 @@ class AlgoVP:
 
         self.rt_bars = self.ib.reqRealTimeBars(self.contract, 5, 'MIDPOINT', False)
         self.rt_bars.updateEvent += self.onRTBarUpdate
-
-        self.ib.execDetailsEvent += self.onPositionChange
 
     def onPositionChange(self, trade, fill):
         self.mylog.info("---------------------------")
@@ -85,6 +82,7 @@ class AlgoVP:
     def onConnectedEvent(self):
         self.mylog.info("---------------------------")
         self.mylog.info("Connected Event")
+        self.setUpData()
 
     def onMinBarUpdate(self, bars, hasNewBar):
         # update 1min bars
@@ -116,9 +114,9 @@ class AlgoVP:
 
             if histDataOk:
                 if rtDataOk:
-                    self.mylog.info("---------------------------")
-                    self.mylog.info("Time Data")
-                    self.mylog.info(cuttentBarTime)
+                    # self.mylog.info("---------------------------")
+                    # self.mylog.info("Time Data")
+                    # self.mylog.info(cuttentBarTime)
                     # self.min_data.printLastN(4)
 
                     rtd = RealTimeData(bars, self.min_data, self.vp_levels, self.mylog)
@@ -134,21 +132,12 @@ class AlgoVP:
                     # self.mylog.info(self.oBucket.firstShort)
 
             else:
-                # request Hist Data Again
+                # Disconnect/Connect
                 self.mylog.info("---------------------------")
-                self.mylog.info("Renew Hist Data Subscription")
-                self.ib.cancelHistoricalData(self.min_bars)
-                self.min_bars = None
-                self.min_bars = self.ib.reqHistoricalData(
-                    self.contract, endDateTime='', durationStr='2 D',
-                    barSizeSetting='1 min', whatToShow='MIDPOINT', useRTH=False,
-                    formatDate=1,
-                    keepUpToDate=True)
-
-                self.min_data = HistData(self.min_bars, self.mylog)
-                self.min_data.printLastN(4)
-
-                self.min_bars.updateEvent += self.onMinBarUpdate
+                self.mylog.info("Disconnect/Connect")
+                self.ib.disconnect()
+                self.ib.sleep(60)
+                self.ib.connect('127.0.0.1', 7496, clientId=1)
 
     def __init__(self):
         # set logger
@@ -186,6 +175,8 @@ class AlgoVP:
         self.ib.connectedEvent += self.onConnectedEvent
 
         self.ib.errorEvent += self.onErrorEvent
+
+        self.ib.execDetailsEvent += self.onPositionChange
 
         self.ib.run()
 

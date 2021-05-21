@@ -43,9 +43,9 @@ class OrdersBucket:
         # return minutes passed after fill
         fillTime = self.timeOf1Trade
         nowTime = datetime.now(tz=tz.tzlocal())
-        self.mylog.info("---------------------------")
-        self.mylog.info('Time in Position')
-        self.mylog.info(nowTime - fillTime)
+        # self.mylog.info("---------------------------")
+        #self.mylog.info('Time in Position')
+        #self.mylog.info(nowTime - fillTime)
         return nowTime - fillTime
 
     def cancel3d(self, direction):
@@ -56,18 +56,20 @@ class OrdersBucket:
                 if tr.orderStatus.status == 'Submitted':
                     self.mylog.info('Sending Cancel')
                     cancelTrade = self.ib.cancelOrder(tr.order)
-                    self.ib.sleep(5)
+                    # self.ib.sleep(5)
                     # while not cancelTrade.isDone():
                     #    self.ib.waitOnUpdate()
+            self.ib.sleep(5)
             self.thirdLong = []
         if direction < 0:
             for tr in self.thirdShort:
                 if tr.orderStatus.status == 'Submitted':
                     self.mylog.info('Sending Cancel')
                     cancelTrade = self.ib.cancelOrder(tr.order)
-                    self.ib.sleep(5)
+                    # self.ib.sleep(5)
                     # while not cancelTrade.isDone():
                     #    self.ib.waitOnUpdate()
+            self.ib.sleep(5)
             self.thirdShort = []
 
     def cancelAll(self):
@@ -79,10 +81,10 @@ class OrdersBucket:
             if opT.orderStatus.status == 'Submitted':
                 self.mylog.info('Sending Cancel')
                 cancelTrade = self.ib.cancelOrder(opT.order)
-                self.ib.sleep(5)
+                # self.ib.sleep(5)
                 # while not cancelTrade.isDone():
                 #    self.ib.waitOnUpdate()
-        # self.ib.sleep(5)
+        self.ib.sleep(5)
         self.firstLong = []
         self.secondLong = []
         self.thirdLong = []
