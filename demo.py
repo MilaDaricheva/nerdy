@@ -21,9 +21,6 @@ nest_asyncio.apply()
 
 class AlgoVP:
     def setUpHistData(self):
-        self.min_bars = None
-        self.min_data = None
-
         self.min_bars = self.ib.reqHistoricalData(
             self.contract, endDateTime='', durationStr='2 D',
             barSizeSetting='1 min', whatToShow='MIDPOINT', useRTH=False,
@@ -93,7 +90,8 @@ class AlgoVP:
         self.mylog.info("My error handler here")
         self.mylog.info(errorCode)
         self.mylog.info(errorString)
-        if errorCode == 2105:
+        if errorCode == 2105 and self.min_bars:
+            self.ib.cancelHistoricalData(self.min_bars)
             self.min_bars = None
             self.min_data = None
         if errorCode == 2106 and not self.min_bars:
