@@ -104,8 +104,19 @@ class AlgoVP:
         self.mylog.info("Connected Event")
         self.setUpData()
 
+    def onDisconnectedEvent(self):
+        self.mylog.info("---------------------------")
+        self.mylog.info("Disconnected Event")
+        now_time = datetime.now(tz=tz.tzlocal())
+        open_time = datetime(now_time.year, now_time.month, now_time.day, 18, 2, 0, 0, tz.tzlocal())
+        util.schedule(open_time, self.connectAfterOpen)
+
     def connectAfterOpen(self):
-        self.ib.connect('127.0.0.1', 7496, clientId=1)
+        self.mylog.info("---------------------------")
+        self.mylog.info("Connect After Open")
+        if not self.ib.isConnected():
+            self.mylog.info("Connecting...")
+            self.ib.connect('127.0.0.1', 7496, clientId=1)
 
     def onMinBarUpdate(self, bars, hasNewBar):
         # update 1min bars
@@ -136,7 +147,7 @@ class AlgoVP:
 
     def onRTBarUpdate(self, bars, hasNewBar):
         # new real time 5sec bar
-        if hasNewBar:
+        if hasNewBar and self.min_data:
             #self.mylog.info("Time Game")
             # UTC
             cuttentBarTime = bars[-1].time.astimezone(tz.tzutc())
@@ -153,13 +164,11 @@ class AlgoVP:
                 self.oBucket.closeAll()
                 self.ib.disconnect()
 
-            if histDataOk:
-                if rtDataOk:
-                    if self.timeIsOk():
-                        rtd = RealTimeData(bars, self.min_data, self.vp_levels, self.mylog)
-                        sm = StrategyManagement(bars, self.min_data, self.vp_levels, self.mylog)
-                        om = OrderManagement(self.ib, self.contract, sm, self.oBucket, rtd, self.vpTouches, self.mylog)
-                        om.goDoBusiness()
+            if histDataOk and rtDataOk and self.timeIsOk():
+                rtd = RealTimeData(bars, self.min_data, self.vp_levels, self.mylog)
+                sm = StrategyManagement(bars, self.min_data, self.vp_levels, self.mylog)
+                om = OrderManagement(self.ib, self.contract, sm, self.oBucket, rtd, self.vpTouches, self.mylog)
+                om.goDoBusiness()
 
     def __init__(self):
         # set logger
@@ -205,13 +214,11 @@ class AlgoVP:
 
         self.ib.connectedEvent += self.onConnectedEvent
 
+        self.ib.disconnectedEvent += self.onDisconnectedEvent
+
         self.ib.errorEvent += self.onErrorEvent
 
         self.ib.execDetailsEvent += self.onPositionChange
-
-        now_time = datetime.now(tz=tz.tzlocal())
-        open_time = datetime(now_time.year, now_time.month, now_time.day, 18, 2, 0, 0, tz.tzlocal())
-        util.schedule(open_time, self.connectAfterOpen)
 
         self.ib.run()
 

@@ -230,13 +230,6 @@ class OrderManagement:
                 # self.mylog.info("---------------------------")
 
     def goDoBusiness(self):
-        # if self.ib.positions() != []:
-        # self.mylog.info(self.ib.positions())
-        lowOfBar = self.rtd.getiLoc(-1).low
-        self.mylog.info("---------------------------")
-        self.mylog.info("lowOfBar")
-        self.mylog.info(lowOfBar)
-
         if self.arVPLong > 0 and self.arVPShort == 0:
             self.vpTouches.addLongT(1)
             # self.printLog()
