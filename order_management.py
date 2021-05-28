@@ -59,10 +59,11 @@ class OrderManagement:
 
         if self.oBucket.firstLong and self.hasLongPos():
             sevenHours = timedelta(hours=7)
-            if self.oBucket.timeInPosition() > sevenHours:
+            if self.oBucket.timeInPosition() > sevenHours and not self.oBucket.stopMoved:
                 self.mylog.info("---------------------------")
                 self.mylog.info("Long Trade Takes too long")
                 # move stops to b/e
+                self.oBucket.stopMoved = True
                 self.oBucket.moveStops(self.oBucket.beStop)
 
         longBigTouch = self.arVPLong > 0 and self.arVPShort == 0 and self.vpTouches.countLongT() > 1
@@ -89,6 +90,7 @@ class OrderManagement:
         if (canLong or self.oBucket.flipLong) and noPosition and ((self.sm.onlyLong() and not self.sm.noLong()) or self.sm.emaUp()):
             # if (canTrade or flipLong) and aroundVPLevel > 0 and aroundVPLevelToShort == 0 and ((onlyLongs and not noLongs) or emaUp)
             self.oBucket.flipLong = False
+            self.oBucket.stopMoved = False
             self.printLog()
 
             self.mylog.info("Start Long1")
@@ -146,10 +148,11 @@ class OrderManagement:
 
         if self.oBucket.firstShort and self.hasShortPos():
             sevenHours = timedelta(hours=7)
-            if self.oBucket.timeInPosition() > sevenHours:
+            if self.oBucket.timeInPosition() > sevenHours and not self.oBucket.stopMoved:
                 self.mylog.info("---------------------------")
                 self.mylog.info("Short Trade Takes too long")
                 # move stops to b/e
+                self.oBucket.stopMoved = True
                 self.oBucket.moveStops(self.oBucket.beStop)
 
         shortBigTouch = self.arVPShort > 0 and self.arVPLong == 0 and self.vpTouches.countShortT() > 1
@@ -180,6 +183,8 @@ class OrderManagement:
             if (not (self.sm.emaUp() and self.sm.onlyLong()) and ((not self.sm.noShort() and self.sm.onlyShort()) or self.sm.emaDown())) or (self.sm.onlyShort() and lowOfBar < self.sm.ema + 1):
                 # if (not (emaUp and onlyLongs) and ((not noShorts and onlyShorts) or emaDown)) or (onlyShorts and low < ema30 + 1)
                 self.oBucket.flipShort = False
+                self.oBucket.stopMoved = False
+
                 self.printLog()
                 self.mylog.info("Start Short")
                 lmpPrice = self.specialRound(self.arVPShort - 1)

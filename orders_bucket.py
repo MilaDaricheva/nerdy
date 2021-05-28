@@ -115,6 +115,7 @@ class OrdersBucket:
     def moveStops(self, level):
         self.mylog.info("---------------------------")
         self.mylog.info('Move Stops')
+
         self.ib.sleep(10)
 
         for opT in self.ib.openTrades():
@@ -140,6 +141,7 @@ class OrdersBucket:
 
         self.rememberVPL = 0
         self.beStop = 0
+        self.stopMoved = False
 
         self.timeOf1Trade = datetime.now(tz=tz.tzlocal())
         self.timeOf2Trade = datetime.now(tz=tz.tzlocal())

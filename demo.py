@@ -97,6 +97,7 @@ class AlgoVP:
             self.min_bars = None
             self.min_data = None
         if errorCode == 2106 and not self.min_bars:
+            self.mylog.info("setUpHistData")
             self.setUpHistData()
 
     def onConnectedEvent(self):
@@ -148,8 +149,6 @@ class AlgoVP:
     def onRTBarUpdate(self, bars, hasNewBar):
         # new real time 5sec bar
         if hasNewBar and self.min_data:
-            #self.mylog.info("Time Game")
-            # UTC
             cuttentBarTime = bars[-1].time.astimezone(tz.tzutc())
             nowTime = datetime.now(tz=tz.tzutc())
             histBarTime = self.min_data.timeCreated
