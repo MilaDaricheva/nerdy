@@ -21,13 +21,16 @@ finish = timestamp(ToYear, ToMonth, ToDay, 23, 59) // backtest finish window
 
 ///////////////////////////////////////////////////
 // Last bars low maybe 60 is better
+// hist_data.py
 lowestLow = lowest(low, 60)
 
 // Last bars high
 highestHigh = highest(high, 60)
 
 ///////////////////////////////////////////////////
-// Generate array of VP solid and dashed above 2976
+// Generate array of VP
+// demo.py init
+
 lenMainVP = 50
 float[] mainVP = array.new_float(0)
 sVP = 3880.51
@@ -36,19 +39,20 @@ for i = 0 to lenMainVP-1
 array.push(mainVP, sVP)
 sVP := sVP+13.065
 
+// rt_data.py
 float aroundVPLevel = 0
 for i = 0 to lenMainVP-1
-if low < array.get(mainVP, i) + 1.5 and close > array.get(mainVP, i) and (high - low < 7) and lowestLow > array.get(mainVP, i) - 1
+if low <= array.get(mainVP, i) + 3 and close > array.get(mainVP, i) and (high - low < 7) and lowestLow > array.get(mainVP, i) - 1
 aroundVPLevel := array.get(mainVP, i)
 
-plotshape(aroundVPLevel > 0, style=shape.triangleup, location=location.belowbar, color=color.blue, transp=80, size=size.small)
+plotshape(aroundVPLevel > 0, style=shape.triangleup, location=location.belowbar, color=color.new(color.blue, 80), size=size.small)
 
 float aroundVPLevelToShort = 0
 for i = 0 to lenMainVP-1
-if high < array.get(mainVP, i) + 1 and high > array.get(mainVP, i) - 1.5 and (high - low < 7) and highestHigh < array.get(mainVP, i) + 1
+if high < array.get(mainVP, i) + 1 and high >= array.get(mainVP, i) - 3 and (high - low < 7) and highestHigh < array.get(mainVP, i) + 1
 aroundVPLevelToShort := array.get(mainVP, i)
 
-plotshape(aroundVPLevelToShort > 0, style=shape.triangledown, location=location.abovebar, color=color.red, transp=80, size=size.small)
+plotshape(aroundVPLevelToShort > 0, style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 80), size=size.small)
 
 
 ///////////////////////////////////////////////////
@@ -66,6 +70,8 @@ cancelalltime = timeinrange("1", "1513-1515:123456")
 
 ///////////////////////////////////////////////////
 // EMA
+// hist_data.py
+
 ema30 = ema(close, 540)
 emaUp = ema30 > ema30[60]
 emaDown = ema30 < ema30[60]
@@ -74,7 +80,8 @@ emaDown = ema30 < ema30[60]
 
 ///////////////////////////////////////////////////
 // Big TimeFrame
-//bigTimeFrame = security(syminfo.tickerid, "15", close)
+// hist_data.py
+
 bigTimeFrame = close
 bigRsiL = rsi(bigTimeFrame, 420)
 bigStoch = stoch(bigRsiL, bigRsiL, bigRsiL, 420)
@@ -89,16 +96,19 @@ EnterLongB = bigK > bigD + DiffSensB and bigK[1] <= bigD[1] + DiffSensB and not 
 EnterShortB = bigK < bigD - DiffSensB and bigK[1] >= bigD[1] - DiffSensB and not InShortB[1]
 InLongB := EnterLongB or InLongB[1] and not EnterShortB
 InShortB := EnterShortB or InShortB[1] and not EnterLongB
+
 //plotchar(InLongB, "InLongB", "", location.top)
 //plotchar(InShortB, "InShortB", "", location.top)
 //plotchar(bigK, "bigK", "", location.top)
 //plotchar(bigD, "bigD", "", location.top)
 
+//strategy_management.py
+
 onlyLongs = (bigK < 20 or bigD < 25 or InLongB)
 onlyShorts = (bigK > 85 or bigD > 85 or InShortB)
 
-noLongs = bigK > 90 and bigD > 90
-noShorts = bigK < 25 and bigD < 25
+noLongs = bigK > 90 or bigD > 90
+noShorts = bigK < 25 or bigD < 25
 
 //plotchar(onlyLongs, "onlyLongs", "", location.top)
 //plotchar(onlyShorts, "onlyShorts", "", location.top)
@@ -112,10 +122,12 @@ rememberVPlevel := aroundVPLevel
 
 //plotchar(rememberVPlevel, "rememberVPlevel", "", location.top)
 
+//order_management.py
 
 flipLong = false
 //Close shorts
-if strategy.position_size < 0 and (aroundVPLevel > 0) and (aroundVPLevel[1] > 0) and aroundVPLevelToShort == 0 and not noLongs and (bigK < 10 or bigD < 10 or InLongB)
+if strategy.position_size < 0 and (aroundVPLevel > 0) and (aroundVPLevel[1] > 0) and aroundVPLevelToShort == 0
+if ((not noLongs and (bigK < 10 or bigD < 10 or InLongB)) or emaUp) and (bigD < 90)
 strategy.close_all(comment="Closed all Shorts", alert_message="Closed all Shorts")
 flipLong := true
 
@@ -128,7 +140,7 @@ timeInLongTrade = barssince(not inLongTime)
 //plotchar(timeInLongTrade, "timeInLongTrade", "", location.top)
 
 //Start Long
-if (canTrade or flipLong) and onlyLongs and aroundVPLevel > 0 and aroundVPLevelToShort == 0 and not noLongs
+if (canTrade or flipLong) and aroundVPLevel > 0 and aroundVPLevelToShort == 0 and ((onlyLongs and not noLongs) or emaUp)
 strategy.entry("L1", strategy.long, 1, alert_message="Started Long")
 strategy.entry("L2", strategy.long, 2, limit=rememberVPlevel - 4, alert_message="Added Long")
 strategy.entry("L3", strategy.long, 2, limit=rememberVPlevel - 10, alert_message="Added Long")
@@ -144,21 +156,29 @@ if strategy.position_size[1] > 0 and strategy.position_size <= 0
 strategy.cancel("L2")
 strategy.cancel("L3")
 
+target2 = 40
+target3 = 80
 
 // Determine stop loss prices
-longStopPrice = rememberVPlevel - 20
+longStopPrice = rememberVPlevel - 22
 
-//tight stop for full pos after 240 min and onlyShort
-if strategy.position_size == 5 and timeInLongTrade > 240 and onlyShorts
-longStopPrice := strategy.position_avg_price - 10
+if emaDown and emaDown[60]
+longStopPrice := rememberVPlevel - 13
+if strategy.position_size == 5
+target2 := 16
+target3 := 40
+
+//tight stop for full pos after 410 min and onlyShort
+if strategy.position_size == 5 and timeInLongTrade > 410
+longStopPrice := strategy.position_avg_price
 
 //stop tight after scale out
 if strategy.position_size[1] == 5 and strategy.position_size == 3
 longStopPrice := strategy.position_avg_price - 10
 if strategy.position_size[1] == 3 and strategy.position_size == 1
 longStopPrice := strategy.position_avg_price
-if strategy.position_size == 1 and close > 30 + strategy.position_avg_price
-longStopPrice := strategy.position_avg_price + (close - strategy.position_avg_price)/2 - 10
+//if strategy.position_size == 1 and close > 30 + strategy.position_avg_price
+// longStopPrice := strategy.position_avg_price + (close - strategy.position_avg_price)/2 - 10
 
 //should never get bigger during the open trade
 if longStopPrice < longStopPrice[1] and strategy.position_size > 0 and timeInLongTrade > 5
@@ -168,8 +188,8 @@ plotchar(longStopPrice, "longStopPrice", "", location.top)
 
 
 strategy.exit("exit long", from_entry="L1", qty=1, profit=300, stop=longStopPrice, alert_message="Closed Long")
-strategy.exit("exit long", from_entry="L2", qty=2, profit=40, stop=longStopPrice, alert_message="Closed Long")
-strategy.exit("exit long", from_entry="L3", qty=2, profit=80, stop=longStopPrice, alert_message="Closed Long")
+strategy.exit("exit long", from_entry="L2", qty=2, profit=target2, stop=longStopPrice, alert_message="Closed Long")
+strategy.exit("exit long", from_entry="L3", qty=2, profit=target3, stop=longStopPrice, alert_message="Closed Long")
 
 
 ///////////////////////////////////////////////////
@@ -189,16 +209,20 @@ inShortTime = strategy.position_size < 0
 
 timeInShortTrade = barssince(not inShortTime)
 //plotchar(timeInShortTrade, "timeInShortTrade", "", location.top)
+//plotchar(low, "low", "", location.top)
+//plotchar(ema30, "ema30", "", location.top)
+
+//order_management.py
 
 //Close longs
-if strategy.position_size > 0 and aroundVPLevelToShort > 0 and aroundVPLevelToShort[1] > 0 and not noShorts and onlyShorts
-if not (emaUp and onlyLongs)
+if strategy.position_size > 0 and aroundVPLevelToShort > 0 and aroundVPLevelToShort[1] > 0
+if (not (emaUp and onlyLongs) and ((not noShorts and onlyShorts) or emaDown)) or (onlyShorts and low < ema30 + 1)
 strategy.close_all(comment="Closed All Longs", alert_message="Closed All Longs")
 flipShort := true
 
 //Start Short
-if (canShort or flipShort) and onlyShorts and aroundVPLevelToShort > 0 and aroundVPLevel == 0 and not noShorts
-if not (emaUp and onlyLongs)
+if (canShort or flipShort) and aroundVPLevelToShort > 0 and aroundVPLevel == 0
+if (not (emaUp and onlyLongs) and ((not noShorts and onlyShorts) or emaDown)) or (onlyShorts and low < ema30 + 1)
 strategy.entry("S1", strategy.short, 1, alert_message="Started Short")
 strategy.entry("S2", strategy.short, 2, limit=rememberVPlevelShort + 3, alert_message="Added Short")
 strategy.entry("S3", strategy.short, 2, limit=rememberVPlevelShort + 10, alert_message="Added Short")
@@ -215,17 +239,26 @@ strategy.cancel("S3")
 
 
 //Stop Price
-shortStopPrice = rememberVPlevelShort + 20
+shortStopPrice = rememberVPlevelShort + 22
+
+targetS2 = 40
+targetS3 = 80
+
+if emaUp and emaUp[60] and InLongB
+shortStopPrice := rememberVPlevelShort + 13
+if strategy.position_size == -5
+targetS2 := 16
+targetS3 := 40
 
 //tight stop for full pos after 240 min and onlyLongs
-if strategy.position_size == -5 and timeInShortTrade > 240 and onlyLongs
-shortStopPrice := strategy.position_avg_price + 10
+if strategy.position_size == -5 and timeInShortTrade > 410
+shortStopPrice := strategy.position_avg_price
 
 //stop tight after scale out
 if strategy.position_size[1] == -5 and strategy.position_size == -3
 shortStopPrice := strategy.position_avg_price + 10
 if strategy.position_size[1] == -3 and strategy.position_size == -1
-shortStopPrice := close + (strategy.position_avg_price - close)/2 + 3
+shortStopPrice := strategy.position_avg_price
 
 
 //should never get bigger during the open trade
@@ -236,8 +269,8 @@ plotchar(shortStopPrice, "shortStopPrice", "", location.top)
 //plotchar(timeInShortTrade, "timeInShortTrade", "", location.top)
 
 strategy.exit("exit short", from_entry="S1", qty=1, profit=150, stop=shortStopPrice, alert_message="Closed Short")
-strategy.exit("exit short", from_entry="S2", qty=2, profit=40, stop=shortStopPrice, alert_message="Closed Short")
-strategy.exit("exit short", from_entry="S3", qty=2, profit=80, stop=shortStopPrice, alert_message="Closed Short")
+strategy.exit("exit short", from_entry="S2", qty=2, profit=targetS2, stop=shortStopPrice, alert_message="Closed Short")
+strategy.exit("exit short", from_entry="S3", qty=2, profit=targetS3, stop=shortStopPrice, alert_message="Closed Short")
 
 //close and cancel all eod
 if closealltime

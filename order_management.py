@@ -27,8 +27,6 @@ class OrderManagement:
 
     def printLog(self):
         self.mylog.info("---------------------------")
-        self.mylog.info("Time Ok")
-        self.mylog.info(self.sm.timeIsOk())
 
         self.mylog.info("emaUp")
         self.mylog.info(self.sm.emaUp())
@@ -70,13 +68,16 @@ class OrderManagement:
         longBigTouch = self.arVPLong > 0 and self.arVPShort == 0 and self.vpTouches.countLongT() > 1
 
         # flip long, close short
-        # and ((not noLongs and (bigK < 10 or bigD < 10 or InLongB)) or emaUp)
-        if self.hasShortPos() and self.oBucket.firstShort and longBigTouch and ((not self.sm.noLong() and (self.sm.bigK() < 10 or self.sm.bigD() < 10 or self.sm.fInLong)) or self.sm.emaUp()):
-            # close all positions and cancer all orders
-            self.oBucket.closeAll()
-            self.oBucket.flipLong = True
+        if self.hasShortPos() and self.oBucket.firstShort and longBigTouch:
+            # if ((not noLongs and (bigK < 10 or bigD < 10 or InLongB)) or emaUp) and (bigD < 90)
+            if ((not self.sm.noLong() and (self.sm.bigK() < 10 or self.sm.bigD() < 10 or self.sm.fInLong)) or self.sm.emaUp()) and self.sm.bigD() < 90:
+                # close all positions and cancer all orders
+                self.oBucket.closeAll()
+                self.oBucket.flipLong = True
 
-        canLong = longBigTouch and self.noPosition() and not self.oBucket.firstLong and self.sm.timeIsOk()
+        noPosition = self.noPosition() and not self.oBucket.firstLong
+
+        canLong = longBigTouch and noPosition
 
         # vself.printLog()
         # self.mylog.info("---------------------------")
@@ -85,7 +86,7 @@ class OrderManagement:
         # self.mylog.info(canLong)
         # self.mylog.info("---------------------------")
 
-        if (canLong or self.oBucket.flipLong) and not self.oBucket.firstLong and ((self.sm.onlyLong() and not self.sm.noLong()) or self.sm.emaUp()):
+        if (canLong or self.oBucket.flipLong) and noPosition and ((self.sm.onlyLong() and not self.sm.noLong()) or self.sm.emaUp()):
             # if (canTrade or flipLong) and aroundVPLevel > 0 and aroundVPLevelToShort == 0 and ((onlyLongs and not noLongs) or emaUp)
             self.oBucket.flipLong = False
             self.printLog()
@@ -93,7 +94,12 @@ class OrderManagement:
             self.mylog.info("Start Long1")
             lmpPrice = self.specialRound(self.arVPLong + 1)
             profPrice = self.specialRound(lmpPrice + 75)
+
             stopPrice = self.specialRound(lmpPrice - 23)
+
+            if self.sm.emaDown() and self.sm.emaDownP():
+                stopPrice = self.specialRound(lmpPrice - 14)
+
             bracket = self.ib.bracketOrder(action='BUY', quantity=self.scale1Size, limitPrice=lmpPrice, takeProfitPrice=profPrice, stopLossPrice=stopPrice, tif='GTC')
             bracket.parent.orderType = 'MKT'
             for o in bracket:
@@ -103,6 +109,9 @@ class OrderManagement:
             self.mylog.info("Start Long2")
             lmpPrice2 = self.specialRound(self.arVPLong - 4)
             profPrice2 = self.specialRound(lmpPrice2 + 10)
+            if self.sm.emaDown() and self.sm.emaDownP():
+                profPrice2 = self.specialRound(lmpPrice2 + 4)
+
             bracket2 = self.ib.bracketOrder(action='BUY', quantity=self.scale2Size, limitPrice=lmpPrice2, takeProfitPrice=profPrice2, stopLossPrice=stopPrice, tif='GTC')
             for o in bracket2:
                 trade = self.ib.placeOrder(self.contract, o)
@@ -111,6 +120,10 @@ class OrderManagement:
             self.mylog.info("Start Long3")
             lmpPrice3 = self.specialRound(self.arVPLong - 10)
             profPrice3 = self.specialRound(lmpPrice3 + 20)
+
+            if self.sm.emaDown() and self.sm.emaDownP():
+                profPrice3 = self.specialRound(lmpPrice3 + 10)
+
             bracket3 = self.ib.bracketOrder(action='BUY', quantity=self.scale3Size, limitPrice=lmpPrice3, takeProfitPrice=profPrice3, stopLossPrice=stopPrice, tif='GTC')
             for o in bracket3:
                 trade = self.ib.placeOrder(self.contract, o)
@@ -142,33 +155,40 @@ class OrderManagement:
         shortBigTouch = self.arVPShort > 0 and self.arVPLong == 0 and self.vpTouches.countShortT() > 1
 
         # flip short, close longs
-        # and ((not noShorts and onlyShorts) or emaDown)
-        if self.hasLongPos() and self.oBucket.firstLong and shortBigTouch and ((not self.sm.noShort() and self.sm.onlyShort()) or self.sm.emaDown()):
-            # if not (emaUp and onlyLongs)
-            if not (self.sm.emaUp() and self.sm.onlyLong()):
+        #
+        lowOfBar = self.rtd.getiLoc(-1).low
+
+        if self.hasLongPos() and self.oBucket.firstLong and shortBigTouch:
+            # if (not (emaUp and onlyLongs) and ((not noShorts and onlyShorts) or emaDown)) or (onlyShorts and low < ema30 + 1)
+            if (not (self.sm.emaUp() and self.sm.onlyLong()) and ((not self.sm.noShort() and self.sm.onlyShort()) or self.sm.emaDown())) or (self.sm.onlyShort() and lowOfBar < self.sm.ema + 1):
                 # close all positions and cancer all orders
                 self.oBucket.closeAll()
                 self.oBucket.flipShort = True
 
-        canShort = shortBigTouch and self.noPosition() and not self.oBucket.firstShort and self.sm.timeIsOk()
+        noPosition = self.noPosition() and not self.oBucket.firstShort
+
+        canShort = shortBigTouch and noPosition
 
         # self.mylog.info("---------------------------")
         # self.printLog()
-        #self.mylog.info("Short Big Touch")
+        # self.mylog.info("Short Big Touch")
         # self.mylog.info(shortBigTouch)
         # self.mylog.info(canShort)
         # self.mylog.info("---------------------------")
 
-        if (canShort or self.oBucket.flipShort) and not self.oBucket.firstShort and ((self.sm.onlyShort() and not self.sm.noShort()) or self.sm.emaDown()):
-            # and ((not noShorts and onlyShorts) or emaDown)
-            if not (self.sm.emaUp() and self.sm.onlyLong()):
-                # if not (emaUp and onlyLongs)
+        if (canShort or self.oBucket.flipShort) and noPosition:
+            if (not (self.sm.emaUp() and self.sm.onlyLong()) and ((not self.sm.noShort() and self.sm.onlyShort()) or self.sm.emaDown())) or (self.sm.onlyShort() and lowOfBar < self.sm.ema + 1):
+                # if (not (emaUp and onlyLongs) and ((not noShorts and onlyShorts) or emaDown)) or (onlyShorts and low < ema30 + 1)
                 self.oBucket.flipShort = False
                 self.printLog()
                 self.mylog.info("Start Short")
                 lmpPrice = self.specialRound(self.arVPShort - 1)
                 profPrice = self.specialRound(lmpPrice - 35)
+
                 stopPrice = self.specialRound(lmpPrice + 23)
+                if self.sm.emaUp() and self.sm.emaUpP():
+                    stopPrice = self.specialRound(lmpPrice - 14)
+
                 bracket = self.ib.bracketOrder(action='SELL', quantity=self.scale1Size, limitPrice=lmpPrice, takeProfitPrice=profPrice, stopLossPrice=stopPrice, tif='GTC')
                 bracket.parent.orderType = 'MKT'
                 for o in bracket:
@@ -178,6 +198,9 @@ class OrderManagement:
                 self.mylog.info("Start Short2")
                 lmpPrice2 = self.specialRound(self.arVPShort + 3)
                 profPrice2 = self.specialRound(lmpPrice2 - 10)
+                if self.sm.emaUp() and self.sm.emaUpP():
+                    profPrice2 = self.specialRound(lmpPrice2 - 4)
+
                 bracket2 = self.ib.bracketOrder(action='SELL', quantity=self.scale2Size, limitPrice=lmpPrice2, takeProfitPrice=profPrice2, stopLossPrice=stopPrice, tif='GTC')
                 for o in bracket2:
                     trade = self.ib.placeOrder(self.contract, o)
@@ -186,6 +209,9 @@ class OrderManagement:
                 self.mylog.info("Start Short3")
                 lmpPrice3 = self.specialRound(self.arVPShort + 10)
                 profPrice3 = self.specialRound(lmpPrice3 - 20)
+                if self.sm.emaUp() and self.sm.emaUpP():
+                    profPrice3 = self.specialRound(lmpPrice3 - 10)
+
                 bracket3 = self.ib.bracketOrder(action='SELL', quantity=self.scale3Size, limitPrice=lmpPrice3, takeProfitPrice=profPrice3, stopLossPrice=stopPrice, tif='GTC')
                 for o in bracket3:
                     trade = self.ib.placeOrder(self.contract, o)
@@ -206,6 +232,10 @@ class OrderManagement:
     def goDoBusiness(self):
         # if self.ib.positions() != []:
         # self.mylog.info(self.ib.positions())
+        lowOfBar = self.rtd.getiLoc(-1).low
+        self.mylog.info("---------------------------")
+        self.mylog.info("lowOfBar")
+        self.mylog.info(lowOfBar)
 
         if self.arVPLong > 0 and self.arVPShort == 0:
             self.vpTouches.addLongT(1)

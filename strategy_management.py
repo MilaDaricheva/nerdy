@@ -10,15 +10,6 @@ import pandas as pd
 
 
 class StrategyManagement:
-    def timeIsOk(self):
-        now_time = datetime.now(tz=tz.tzlocal())
-        eod_time = datetime(now_time.year, now_time.month, now_time.day, 16, 0, 0, 0, tz.tzlocal())
-        night_time = datetime(now_time.year, now_time.month, now_time.day, 18, 5, 0, 0, tz.tzlocal())
-
-        if now_time < eod_time or now_time > night_time:
-            return True
-        else:
-            return False
 
     def emaUp(self):
         return self.min_data.getiLoc(-1)['ema_ind'] > self.min_data.getiLoc(-60)['ema_ind']
@@ -27,10 +18,10 @@ class StrategyManagement:
         return self.min_data.getiLoc(-1)['ema_ind'] < self.min_data.getiLoc(-60)['ema_ind']
 
     def emaUpP(self):
-        return self.min_data.getiLoc(-60)['ema_ind'] > self.min_data.getiLoc(-120)['ema_ind']
+        return self.min_data.getiLoc(-61)['ema_ind'] > self.min_data.getiLoc(-120)['ema_ind']
 
     def emaDownP(self):
-        return self.min_data.getiLoc(-60)['ema_ind'] < self.min_data.getiLoc(-120)['ema_ind']
+        return self.min_data.getiLoc(-61)['ema_ind'] < self.min_data.getiLoc(-120)['ema_ind']
 
     # get BigD - 30min
     def bigD(self):
