@@ -1,6 +1,7 @@
 from ta.utils import dropna
 from ib_insync import IB, Future, util
 from hist_data import HistData
+from hist_data_fetcher import HistDataFetcher
 from rt_data import RealTimeData
 from strategy_management import StrategyManagement
 from order_management import OrderManagement
@@ -10,27 +11,18 @@ from datetime import datetime, timedelta, time
 from dateutil import tz
 import logging
 import logging.handlers as handlers
-from ib_insync import IBC, Watchdog
 
 import nest_asyncio
 
 nest_asyncio.apply()
 
-#logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO)
-
 
 class AlgoVP:
     def setUpHistData(self):
-        self.min_bars = self.ib.reqHistoricalData(
-            self.contract, endDateTime='', durationStr='2 D',
-            barSizeSetting='1 min', whatToShow='MIDPOINT', useRTH=False,
-            formatDate=1,
-            keepUpToDate=True)
-
-        self.min_data = HistData(self.min_bars, self.mylog)
-        self.min_data.printLastN(4)
-
-        self.min_bars.updateEvent += self.onMinBarUpdate
+        self.mylog.info("---------------------------")
+        self.mylog.info("reqHistoricalData...")
+        self.hist_data_fetcher = HistDataFetcher(self.mylog, self.clientID)
+        self.min_data = self.hist_data_fetcher.getMinData()
 
     def setUpData(self):
         self.mylog.info("---------------------------")
@@ -90,25 +82,20 @@ class AlgoVP:
         self.mylog.info("My error handler here")
         self.mylog.info(errorCode)
         self.mylog.info(errorString)
-        if errorCode == 2105 and self.min_bars:
-            self.ib.cancelHistoricalData(self.min_bars)
-            self.min_bars = None
-            self.min_data = None
-        if errorCode == 2106 and not self.min_bars:
-            self.mylog.info("setUpHistData")
-            self.setUpHistData()
+        if errorCode == 2105:
+            self.mylog.info("disconnect")
+            self.ib.disconnect()
 
     def onConnectedEvent(self):
         self.mylog.info("---------------------------")
         self.mylog.info("Connected Event")
-        self.setUpData()
 
     def onDisconnectedEvent(self):
         self.mylog.info("---------------------------")
         self.mylog.info("Disconnected Event")
-        now_time = datetime.now(tz=tz.tzlocal())
-        open_time = datetime(now_time.year, now_time.month, now_time.day, 18, 2, 0, 0, tz.tzlocal())
-        util.schedule(open_time, self.connectAfterOpen)
+        #now_time = datetime.now(tz=tz.tzlocal())
+        #open_time = datetime(now_time.year, now_time.month, now_time.day, 18, 2, 0, 0, tz.tzlocal())
+        #util.schedule(open_time, self.connectAfterOpen)
 
     def connectAfterOpen(self):
         self.mylog.info("---------------------------")
@@ -116,13 +103,6 @@ class AlgoVP:
         if not self.ib.isConnected():
             self.mylog.info("Connecting...")
             self.ib.connect('127.0.0.1', 7496, clientId=1)
-
-    def onMinBarUpdate(self, bars, hasNewBar):
-        # update 1min bars
-        if hasNewBar:
-            u_min_data = HistData(bars, self.mylog)
-            self.min_data = u_min_data
-            self.mylog.info(bars[-1])
 
     def timeToClose(self):
         now_time = datetime.now(tz=tz.tzlocal())
@@ -146,10 +126,17 @@ class AlgoVP:
 
     def onRTBarUpdate(self, bars, hasNewBar):
         # new real time 5sec bar
-        if hasNewBar and self.min_data:
+        if hasNewBar:
+            self.mylog.info("rt data")
+            self.mylog.info(bars[-1])
+
+            self.min_data = self.hist_data_fetcher.getMinData()
+
             cuttentBarTime = bars[-1].time.astimezone(tz.tzutc())
             nowTime = datetime.now(tz=tz.tzutc())
+
             histBarTime = self.min_data.timeCreated
+            self.mylog.info(histBarTime)
 
             twSec = timedelta(seconds=20)
             twoMin = timedelta(minutes=2)
@@ -195,6 +182,8 @@ class AlgoVP:
         # set IB
         self.mylog.info("---------------------------")
         self.mylog.info("Starting the connection")
+
+        self.clientID = 2
 
         self.ib = IB()
 
