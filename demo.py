@@ -1,28 +1,34 @@
-from ta.utils import dropna
+#from ta.utils import dropna
 from ib_insync import IB, Future, util
-from hist_data import HistData
 from hist_data_fetcher import HistDataFetcher
 from rt_data import RealTimeData
 from strategy_management import StrategyManagement
 from order_management import OrderManagement
 from orders_bucket import OrdersBucket
 from vp_touches import VpTouches
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 from dateutil import tz
 import logging
 import logging.handlers as handlers
 
 import nest_asyncio
-
 nest_asyncio.apply()
 
 
 class AlgoVP:
-    def setUpHistData(self):
+    def reConnect(self):
         self.mylog.info("---------------------------")
-        self.mylog.info("reqHistoricalData...")
-        self.hist_data_fetcher = HistDataFetcher(self.mylog, self.clientID)
-        self.min_data = self.hist_data_fetcher.getMinData()
+        self.mylog.info("reConnect")
+        if not self.ib.isConnected():
+            self.ib.connect('127.0.0.1', 7496, clientId=1)
+
+    def setUpHistData(self):
+        if not self.hist_data_fetcher:
+            self.mylog.info("---------------------------")
+            self.mylog.info("setUpHistData + deadZone")
+            self.deadZone()
+            self.mylog.info(self.clientID)
+            self.hist_data_fetcher = HistDataFetcher(self.mylog, self.clientID)
 
     def setUpData(self):
         self.mylog.info("---------------------------")
@@ -82,9 +88,24 @@ class AlgoVP:
         self.mylog.info("My error handler here")
         self.mylog.info(errorCode)
         self.mylog.info(errorString)
-        if errorCode == 2105:
-            self.mylog.info("disconnect")
+
+        now_time = datetime.now(tz=tz.tzlocal())
+        timeDelta = timedelta(minutes=2)
+        open_time = now_time + timeDelta
+
+        timeGap = now_time - self.requestStarted >= timeDelta
+        if errorCode == 162:
             self.ib.disconnect()
+            self.doNotConnect = True
+        if (errorCode == 2105 or errorCode == 1100) and self.hist_data_fetcher:
+            self.mylog.info("Hist data nah nah")
+            self.hist_data_fetcher.killFetcher()
+            self.hist_data_fetcher = None
+            self.clientID = self.clientID + 1
+        if (errorCode == 2106 or errorCode == 1101 or errorCode == 1102) and not self.hist_data_fetcher and timeGap:
+            self.mylog.info("Hist data seems ok")
+            self.requestStarted = datetime.now(tz=tz.tzlocal())
+            util.schedule(open_time, self.setUpHistData)
 
     def onConnectedEvent(self):
         self.mylog.info("---------------------------")
@@ -93,23 +114,19 @@ class AlgoVP:
     def onDisconnectedEvent(self):
         self.mylog.info("---------------------------")
         self.mylog.info("Disconnected Event")
-        #now_time = datetime.now(tz=tz.tzlocal())
-        #open_time = datetime(now_time.year, now_time.month, now_time.day, 18, 2, 0, 0, tz.tzlocal())
-        #util.schedule(open_time, self.connectAfterOpen)
+        now_time = datetime.now(tz=tz.tzlocal())
+        timeDelta = timedelta(minutes=5)
+        open_time = now_time + timeDelta
 
-    def connectAfterOpen(self):
-        self.mylog.info("---------------------------")
-        self.mylog.info("Connect After Open")
-        if not self.ib.isConnected():
-            self.mylog.info("Connecting...")
-            self.ib.connect('127.0.0.1', 7496, clientId=1)
+        if not self.doNotConnect:
+            util.schedule(open_time, self.reConnect)
 
     def timeToClose(self):
         now_time = datetime.now(tz=tz.tzlocal())
-        close_time = datetime(now_time.year, now_time.month, now_time.day, 16, 10, 0, 0, tz.tzlocal())
-        twoSec = timedelta(seconds=2)
+        close_time_from = datetime(now_time.year, now_time.month, now_time.day, 16, 10, 0, 0, tz.tzlocal())
+        close_time_to = datetime(now_time.year, now_time.month, now_time.day, 16, 59, 0, 0, tz.tzlocal())
 
-        if now_time < close_time + twoSec and now_time > close_time - twoSec:
+        if now_time < close_time_to and now_time > close_time_from:
             return True
         else:
             return False
@@ -124,35 +141,74 @@ class AlgoVP:
         else:
             return False
 
+    def deadZone(self):
+        now_time = datetime.now(tz=tz.tzlocal())
+        start_time = datetime(now_time.year, now_time.month, now_time.day, 0, 0, 0, 0, tz.tzlocal())
+        end_time = datetime(now_time.year, now_time.month, now_time.day, 0, 30, 0, 0, tz.tzlocal())
+        deadZone = now_time < end_time and now_time > start_time
+
+        if deadZone:
+            return True
+        else:
+            return False
+
     def onRTBarUpdate(self, bars, hasNewBar):
         # new real time 5sec bar
         if hasNewBar:
-            self.mylog.info("rt data")
-            self.mylog.info(bars[-1])
+            #self.mylog.info("rt data")
+            # self.mylog.info(bars[-1])
 
-            self.min_data = self.hist_data_fetcher.getMinData()
+            #now_time = datetime.now(tz=tz.tzlocal())
+            #timeDelta = timedelta(minutes=5)
+            timeGap = datetime.now(tz=tz.tzlocal()) - self.requestStarted >= timedelta(minutes=5)
 
-            cuttentBarTime = bars[-1].time.astimezone(tz.tzutc())
-            nowTime = datetime.now(tz=tz.tzutc())
-
-            histBarTime = self.min_data.timeCreated
-            self.mylog.info(histBarTime)
-
-            twSec = timedelta(seconds=20)
-            twoMin = timedelta(minutes=2)
-
-            rtDataOk = nowTime - twSec <= cuttentBarTime
-            histDataOk = nowTime - twoMin <= histBarTime
-
-            if self.timeToClose() and self.ib.isConnected():
+            if self.timeToClose() and (self.oBucket.firstLong or self.oBucket.firstShort):
+                self.mylog.info("---------------------------")
+                self.mylog.info("timeToClose")
                 self.oBucket.closeAll()
-                self.ib.disconnect()
+                # historical data?
+                self.hist_data_fetcher.killFetcher()
+                self.hist_data_fetcher = None
+                self.clientID = self.clientID + 1
 
-            if histDataOk and rtDataOk and self.timeIsOk():
-                rtd = RealTimeData(bars, self.min_data, self.vp_levels, self.mylog)
-                sm = StrategyManagement(bars, self.min_data, self.vp_levels, self.mylog)
-                om = OrderManagement(self.ib, self.contract, sm, self.oBucket, rtd, self.vpTouches, self.mylog)
-                om.goDoBusiness()
+            if self.timeIsOk() and not self.deadZone():
+                if not self.hist_data_fetcher:
+                    if timeGap:
+                        self.mylog.info("---------------------------")
+                        self.mylog.info("No fetcher, create one")
+                        self.requestStarted = datetime.now(tz=tz.tzlocal())
+                        self.setUpHistData()
+                else:
+                    self.min_data = self.hist_data_fetcher.getMinData()
+
+                    cuttentBarTime = bars[-1].time.astimezone(tz.tzutc())
+                    nowTime = datetime.now(tz=tz.tzutc())
+
+                    histBarTime = self.min_data.timeCreated
+                    # self.mylog.info("self.min_data.timeCreated")
+                    # self.mylog.info(histBarTime)
+
+                    twSec = timedelta(seconds=20)
+                    twoMin = timedelta(minutes=2)
+
+                    rtDataOk = nowTime - twSec <= cuttentBarTime
+                    histDataOk = nowTime - twoMin <= histBarTime
+
+                    if histDataOk and rtDataOk:
+                        #self.mylog.info("all data ok")
+                        # self.mylog.info(nowTime)
+                        rtd = RealTimeData(bars, self.min_data, self.vp_levels, self.mylog)
+                        sm = StrategyManagement(bars, self.min_data, self.vp_levels, self.mylog)
+                        om = OrderManagement(self.ib, self.contract, sm, self.oBucket, rtd, self.vpTouches, self.mylog)
+                        om.goDoBusiness()
+                    else:
+                        if timeGap and not histDataOk:
+                            self.mylog.info("---------------------------")
+                            self.mylog.info("Hist Data not OK, kill fetcher, UTC Time")
+                            self.mylog.info(nowTime)
+                            self.hist_data_fetcher.killFetcher()
+                            self.hist_data_fetcher = None
+                            self.clientID = self.clientID + 1
 
     def __init__(self):
         # set logger
@@ -165,7 +221,8 @@ class AlgoVP:
 
         self.mylog = logger
 
-        self.connectionStarted = datetime.now(tz=tz.tzlocal())
+        self.doNotConnect = False
+        self.requestStarted = datetime.now(tz=tz.tzlocal())
 
         self.mylog.info("---------------------------")
         self.mylog.info("Building VP Levels")
@@ -182,6 +239,9 @@ class AlgoVP:
         # set IB
         self.mylog.info("---------------------------")
         self.mylog.info("Starting the connection")
+
+        self.hist_data_fetcher = None
+        self.min_data = None
 
         self.clientID = 2
 

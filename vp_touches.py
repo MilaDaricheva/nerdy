@@ -20,7 +20,7 @@ class VpTouches:
 
     def countLongT(self):
         a = np.array(self.longT)
-        b = a[:12]
+        b = a[:16]
         return np.count_nonzero(b == 1)
 
     def addShortT(self, touch):
@@ -34,7 +34,7 @@ class VpTouches:
 
     def countShortT(self):
         a = np.array(self.shortT)
-        b = a[:12]
+        b = a[:16]
         return np.count_nonzero(b == 1)
 
     def __init__(self, logger):

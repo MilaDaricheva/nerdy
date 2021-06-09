@@ -5,10 +5,6 @@ from ta.trend import EMAIndicator
 import pandas as pd
 from datetime import datetime, timedelta, time
 from dateutil import tz
-#import logging
-#import logging.handlers as handlers
-
-#logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO)
 
 
 class HistData:
@@ -64,9 +60,6 @@ class HistData:
         lastDate.replace(tzinfo=ptc)
 
         self.timeCreated = lastDate.astimezone(tz.tzutc())
-        # self.mylog.info("---------")
-        # self.mylog.info("Last Bar Historical")
-        # self.mylog.info(bars[-1])
 
     def printLastN(self, n):
         self.mylog.info(self.bars.tail(n))

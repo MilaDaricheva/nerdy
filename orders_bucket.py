@@ -100,11 +100,6 @@ class OrdersBucket:
             mOrder = MarketOrder('BUY', abs(self.ib.positions()[0].position), tif='GTC')
             self.ib.placeOrder(self.contract, mOrder)
 
-        # show open trades
-        # self.mylog.info("---------------------------")
-        #self.mylog.info('Should be no trades')
-        # self.mylog.info(self.ib.openTrades())
-
         self.firstLong = []
         self.secondLong = []
         self.thirdLong = []
@@ -120,7 +115,8 @@ class OrdersBucket:
 
         for opT in self.ib.openTrades():
             if opT.orderStatus.status == 'PreSubmitted' and opT.order.auxPrice > 0:
-                opT.order.auxPrice = level
+                opT.order.triggerPrice = level
+                opT.order.adjustedStopPrice = level
                 self.ib.placeOrder(self.contract, opT.order)
 
     def __init__(self, ib, contract, logger):

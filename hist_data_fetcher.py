@@ -22,7 +22,7 @@ class HistDataFetcher:
 
         mesContract = Future('MES', '20210618', 'GLOBEX', 'MESM1', '5', 'USD')
 
-        self.mylog.info("reqHistoricalData...")
+        self.mylog.info("new reqHistoricalData...")
 
         self.min_bars = self.ib.reqHistoricalData(
             mesContract, endDateTime='', durationStr='2 D',
@@ -38,10 +38,23 @@ class HistDataFetcher:
 
         self.min_bars.updateEvent += self.onMinBarUpdate
 
+    def killFetcher(self):
+        self.mylog.info("---------------------------")
+        self.mylog.info("disconnect fetcher")
+        self.ib.cancelHistoricalData(self.min_bars)
+        self.mylog.info(self.clientID)
+        self.ib.disconnect()
+
     def getMinData(self):
         return self.min_data
 
     def __init__(self, logger, clientID):
         self.mylog = logger
         self.clientID = clientID
+        self.ib = None
+        self.min_bars = None
+        self.min_data = None
+        self.mylog.info("---------------------------")
+        self.mylog.info("Init fetcher")
+        self.mylog.info(self.clientID)
         self.fetchHistData()
