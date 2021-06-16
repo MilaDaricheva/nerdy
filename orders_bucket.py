@@ -107,17 +107,17 @@ class OrdersBucket:
         self.secondShort = []
         self.thirdShort = []
 
-    def moveStops(self, level):
-        self.mylog.info("---------------------------")
-        self.mylog.info('Move Stops')
+    # def stopMoved(self, level):
+    #    self.mylog.info("---------------------------")
+    #    self.mylog.info('Move Stops')
 
-        self.ib.sleep(10)
+     #   self.ib.sleep(10)
 
-        for opT in self.ib.openTrades():
-            if opT.orderStatus.status == 'PreSubmitted' and opT.order.auxPrice > 0:
-                opT.order.triggerPrice = level
-                opT.order.adjustedStopPrice = level
-                self.ib.placeOrder(self.contract, opT.order)
+    #    for opT in self.ib.openTrades():
+     #       if opT.orderStatus.status == 'PreSubmitted' and opT.order.auxPrice > 0:
+        #opT.order.triggerPrice = level
+      #          opT.order.adjustedStopPrice = level
+       #         self.ib.placeOrder(self.contract, opT.order)
 
     def __init__(self, ib, contract, logger):
         self.mylog = logger

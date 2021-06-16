@@ -11,7 +11,7 @@ import numpy as np
 class VpTouches:
     def addLongT(self, touch):
         self.longT.append(touch)
-        if len(self.longT) > 24:
+        if len(self.longT) > 12:
             # remove old element
             self.longT.pop(0)
         # self.mylog.info("---------------------------")
@@ -20,12 +20,11 @@ class VpTouches:
 
     def countLongT(self):
         a = np.array(self.longT)
-        b = a[:16]
-        return np.count_nonzero(b == 1)
+        return np.count_nonzero(a == 1)
 
     def addShortT(self, touch):
         self.shortT.append(touch)
-        if len(self.shortT) > 24:
+        if len(self.shortT) > 12:
             # remove old element
             self.shortT.pop(0)
         # self.mylog.info("---------------------------")
@@ -34,8 +33,7 @@ class VpTouches:
 
     def countShortT(self):
         a = np.array(self.shortT)
-        b = a[:16]
-        return np.count_nonzero(b == 1)
+        return np.count_nonzero(a == 1)
 
     def __init__(self, logger):
         self.mylog = logger

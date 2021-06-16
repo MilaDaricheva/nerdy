@@ -62,12 +62,12 @@ class AlgoVP:
                 # cancel 3d scale, move stops be
                 self.mylog.info("cancel 3d short")
                 self.oBucket.cancel3d(-1)
-                self.oBucket.moveStops(self.oBucket.beStop)
+                # self.oBucket.moveStops(self.oBucket.beStop)
             if self.ib.positions()[0].position == -(self.oBucket.scale1Size + self.oBucket.scale3Size):
                 self.mylog.info("scale out of 2d short happened - 3d did fill")
                 # move stops tighter
                 self.mylog.info("move stops BE+10")
-                self.oBucket.moveStops(self.oBucket.beStop + 10)
+                #self.oBucket.moveStops(self.oBucket.beStop + 10)
 
         if trade.order.action == 'SELL' and self.ib.positions():
             # scale out of long happened
@@ -76,12 +76,12 @@ class AlgoVP:
                 # cancel 3d scale, move stops be
                 self.mylog.info("cancel 3d long")
                 self.oBucket.cancel3d(1)
-                self.oBucket.moveStops(self.oBucket.beStop)
+                # self.oBucket.moveStops(self.oBucket.beStop)
             if self.ib.positions()[0].position == self.oBucket.scale1Size + self.oBucket.scale3Size:
                 self.mylog.info("scale out of 2d long happened - 3d did fill")
                 # move stops tighter
                 self.mylog.info("move stops BE-10 ")
-                self.oBucket.moveStops(self.oBucket.beStop - 10)
+                #self.oBucket.moveStops(self.oBucket.beStop - 10)
 
     def onErrorEvent(self, reqId, errorCode, errorString, contract):
         self.mylog.info("---------------------------")

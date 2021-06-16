@@ -3,10 +3,6 @@ from ta.utils import dropna
 from datetime import datetime, timedelta, time
 from dateutil import tz
 import pandas as pd
-#import logging
-#import logging.handlers as handlers
-
-#logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO)
 
 
 class StrategyManagement:
@@ -23,7 +19,19 @@ class StrategyManagement:
     def emaDownP(self):
         return self.min_data.getiLoc(-61)['ema_ind'] < self.min_data.getiLoc(-120)['ema_ind']
 
+    def emaDiff(self):
+        return self.min_data.getiLoc(-1)['ema_ind'] - self.min_data.getiLoc(-120)['ema_ind']
+
+    def emaNearLong(self, aroundVPLevel):
+        #emaNearLong = ema30 > aroundVPLevel and ema30 < aroundVPLevel + 2
+        return self.min_data.getiLoc(-1)['ema_ind'] > aroundVPLevel and self.min_data.getiLoc(-1)['ema_ind'] < aroundVPLevel + 2
+
+    def emaNearShort(self, aroundVPLevel):
+        #ema30 < aroundVPLevelToShort and ema30 > aroundVPLevelToShort - 2
+        return self.min_data.getiLoc(-1)['ema_ind'] < aroundVPLevel and self.min_data.getiLoc(-1)['ema_ind'] > aroundVPLevel - 2
+
     # get BigD - 30min
+
     def bigD(self):
         return self.fD
 
@@ -31,21 +39,29 @@ class StrategyManagement:
     def bigK(self):
         return self.fK
 
-    #onlyLongs = (bigK < 20 or bigD < 25 or InLongB)
+    # onlyLongs = (emaUp or InLongB)
     def onlyLong(self):
-        return self.fK < 20 or self.fD < 25 or self.fInLong
+        return self.emaUp or self.fInLong
 
-    #onlyShorts = (bigK > 85 or bigD > 85 or InShortB)
+    # onlyShorts = (emaDown or InShortB)
     def onlyShort(self):
-        return self.fK > 85 or self.fD > 85 or self.fInShort
+        return self.emaDown or self.fInShort
 
     def noLong(self):
-        #bigK > 90 or bigD > 90
-        return self.fK > 90 or self.fD > 90
+        # noLongs = bigK > 50 or bigD > 50
+        return self.fK > 50 or self.fD > 50
 
     def noShort(self):
-        #noShorts = bigK < 25 or bigD < 25
-        return self.fK < 25 or self.fD < 25
+        # noShorts = bigK < 50 or bigD < 50
+        return self.fK < 50 or self.fD < 50
+
+    def tooHigh(self):
+        # tooHigh = bigK > 80 or bigD > 80
+        return self.fK > 80 or self.fD > 80
+
+    def tooLow(self):
+        # tooLow = bigK < 21 or bigD < 21
+        return self.fK < 21 or self.fD < 21
 
     def __init__(self, bars, min_data, vp_levels, logger):
         self.mylog = logger
