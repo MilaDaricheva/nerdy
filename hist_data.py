@@ -12,9 +12,12 @@ class HistData:
     def transform_val(self, x):
         return round(100*x, 2)
 
+    def transform_ema(self, x):
+        return round(x, 2)
+
     def fillEma(self):
         ema_ind = EMAIndicator(close=self.bars['close'], window=540, fillna=True)
-        self.bars['ema_ind'] = ema_ind.ema_indicator().apply(self.transform_val)
+        self.bars['ema_ind'] = ema_ind.ema_indicator().apply(self.transform_ema)
 
     def fillStoch(self, w, sl1, sl2):
         stoch_ind = StochRSIIndicator(close=self.bars['close'], window=w, smooth1=sl1, smooth2=sl2, fillna=True)

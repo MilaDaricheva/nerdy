@@ -26,7 +26,7 @@ class AlgoVP:
         if not self.hist_data_fetcher:
             self.mylog.info("---------------------------")
             self.mylog.info("setUpHistData + deadZone")
-            self.deadZone()
+            self.mylog.info(self.deadZone())
             self.mylog.info(self.clientID)
             self.hist_data_fetcher = HistDataFetcher(self.mylog, self.clientID)
 
@@ -249,7 +249,7 @@ class AlgoVP:
 
         self.ib.connect('127.0.0.1', 7496, clientId=1)
 
-        self.contract = Future('MES', '20210618', 'GLOBEX', 'MESM1', '5', 'USD')
+        self.contract = Future('MES', '20210917', 'GLOBEX', 'MESU1', '5', 'USD')
         self.ib.qualifyContracts(self.contract)
 
         if self.ib.isConnected():
