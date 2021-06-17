@@ -107,7 +107,7 @@ class OrderManagement:
 
     def manageLongs(self):
 
-        longBigTouch = self.arVPLong > 0 and self.arVPShort == 0 and self.vpTouches.countLongT() > 1
+        longBigTouch = self.arVPLong > 0 and self.arVPShort == 0 and self.vpTouches.countLongT() >= 1
 
         # flip long, close short
         if self.hasShortPos() and self.oBucket.firstShort and longBigTouch:
@@ -202,7 +202,7 @@ class OrderManagement:
 
     def manageShorts(self):
 
-        shortBigTouch = self.arVPShort > 0 and self.arVPLong == 0 and self.vpTouches.countShortT() > 1
+        shortBigTouch = self.arVPShort > 0 and self.arVPLong == 0 and self.vpTouches.countShortT() >= 1
 
         # flip short, close longs
         lowOfBar = self.rtd.getiLoc(-1).low

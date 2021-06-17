@@ -75,7 +75,7 @@ class OrdersBucket:
             self.mylog.info(self.ib.openTrades())
 
             for opT in self.ib.openTrades():
-                if opT.orderStatus.status == 'Submitted':
+                if opT.orderStatus.status == 'Submitted' and not opT.fills:
                     self.mylog.info('Sending Cancel')
                     self.ib.cancelOrder(opT.order)
 

@@ -23,7 +23,7 @@ class AlgoVP:
             self.ib.connect('127.0.0.1', 7496, clientId=1)
 
     def setUpHistData(self):
-        if not self.hist_data_fetcher:
+        if not self.hist_data_fetcher and not self.deadZone():
             self.mylog.info("---------------------------")
             self.mylog.info("setUpHistData + deadZone")
             self.mylog.info(self.deadZone())
