@@ -54,12 +54,9 @@ class OrderManagement:
     def shootOneLong(self):
         self.mylog.info("Start Long1")
         lmpPrice = self.specialRound(self.arVPLong + 1)
-        profPrice = self.specialRound(lmpPrice + 30)
+        profPrice = self.specialRound(lmpPrice + 23)
 
-        stopPrice = self.specialRound(lmpPrice - 23)
-
-        if self.sm.onlyShort():
-            stopPrice = self.specialRound(lmpPrice - 15)
+        stopPrice = self.specialRound(lmpPrice - 28)
 
         bracket = self.ib.bracketOrder(action='BUY', quantity=self.scale1Size, limitPrice=lmpPrice, takeProfitPrice=profPrice, stopLossPrice=stopPrice, tif='GTC')
         bracket.parent.orderType = 'MKT'
@@ -74,18 +71,13 @@ class OrderManagement:
         self.oBucket.rememberVPLevel(self.specialRound(self.arVPLong))
 
     def shootTwoThreeLongs(self):
-        lmpPrice2 = self.specialRound(self.arVPLong - 4)
-        profPrice2 = self.specialRound(lmpPrice2 + 10)
+        lmpPrice2 = self.specialRound(self.arVPLong - 10)
+        profPrice2 = self.specialRound(lmpPrice2 + 23)
 
-        stopPrice = self.specialRound(self.arVPLong - 22)
+        lmpPrice3 = self.specialRound(self.arVPLong - 20)
+        profPrice3 = self.specialRound(lmpPrice3 + 23)
 
-        lmpPrice3 = self.specialRound(self.arVPLong - 10)
-        profPrice3 = self.specialRound(lmpPrice3 + 20)
-
-        if self.sm.onlyShort():
-            profPrice2 = self.specialRound(lmpPrice2 + 10)
-            profPrice3 = self.specialRound(lmpPrice3 + 10)
-            stopPrice = self.specialRound(self.arVPLong - 15)
+        stopPrice = self.specialRound(self.arVPLong - 28)
 
         self.mylog.info("Start Long2")
 
@@ -109,55 +101,64 @@ class OrderManagement:
 
         longBigTouch = self.arVPLong > 0 and self.arVPShort == 0 and self.vpTouches.countLongT() >= 1
 
+        cond1 = self.sm.twoStepsFromHigh and self.sm.emaUp
+        cond2 = (self.sm.wobbleCond or self.sm.trendCond or self.sm.strongCond or self.sm.extremeCond) and self.sm.emaDown
+        cond3 = self.sm.emaDiff > 0
+
         # flip long, close short
         if self.hasShortPos() and self.oBucket.firstShort and longBigTouch:
-            #  if ((onlyLongs and not noLongs and InLongB) or noShorts) and not (emaNearLong and InShortB)
-            if ((self.sm.onlyLong() and not self.sm.noLong() and self.sm.fInLong) or self.sm.noShort()) and not (self.sm.emaNearLong(self.arVPLong) and self.sm.fInShort):
+
+            if cond1 or cond2 or cond3:
                 # close all positions and cancer all orders
                 self.oBucket.closeAll()
                 self.oBucket.flipLong = True
 
-        noPosition = self.noPosition() and not self.oBucket.firstLong
+        noPosition = self.noPosition() and not (self.oBucket.firstLong or self.oBucket.firstShort)
 
         canLong = longBigTouch and noPosition
 
         if (canLong or self.oBucket.flipLong) and noPosition:
-            # if emaDiff > -0.55 and emaDiff < 0.55 and noShorts and not (emaNearLong and InShortB)
-            wobbleZone = self.sm.emaDiff() > -0.55 and self.sm.emaDiff() < 0.55
+            self.oBucket.cancelAll()
 
-            if wobbleZone and self.sm.noShort() and not (self.sm.emaNearLong(self.arVPLong) and self.sm.fInShort):
+            if cond1 or cond2:
                 self.oBucket.flipLong = False
                 self.oBucket.stopMoved = False
+                self.oBucket.targetMoved = False
+
                 self.printLog()
 
-                # Long 1
-                self.shootOneLong()
-                # Long 2 and 3
-                self.shootTwoThreeLongs()
-
-                # else if ((onlyLongs and not noLongs and InLongB) or tooLow) and not (emaNearLong and InShortB)
-            elif ((self.sm.onlyLong() and not self.sm.noLong() and self.sm.fInLong) or self.sm.tooLow()) and not (self.sm.emaNearLong(self.arVPLong) and self.sm.fInShort):
-                self.oBucket.flipLong = False
-                self.oBucket.stopMoved = False
-                self.printLog()
-
-                # Long 1
-                self.shootOneLong()
-
-                if not self.sm.onlyShort():
-                    # Long 2 and 3
+                if self.sm.emaDiff > -2:
+                    # Shoot All
+                    self.shootOneLong()
                     self.shootTwoThreeLongs()
+                else:
+                    # Long 1
+                    self.shootOneLong()
+                    if self.sm.sixStepsFromHigh:
+                        # Long 2 and 3
+                        self.shootTwoThreeLongs()
+                        self.oBucket.rememberTimeDump()
+
+        if self.hasLongPos() and not self.oBucket.stopMoved:
+            # see if we need to adjust bracket
+            #timeInLongTrade > 620 or (emaDiff < -2 and not sixStepsFromHigh)
+            if self.oBucket.timeInPosition() > 620 or (self.sm.emaDiff < -2 and not self.sm.sixStepsFromHigh):
+                self.mylog.info("Long: Takes too long or emaDiff < -2")
+                self.oBucket.adjustBraket(self.oBucket.rememberVPL + 23, self.oBucket.rememberVPL - 10)
+                self.oBucket.stopMoved = True
+
+        if self.ib.positions()[0].position == 1 and self.sm.emaDiff > 2 and not self.oBucket.targetMoved:
+            # make target bigger
+            self.mylog.info("Long: Make target bigger")
+            self.oBucket.adjustBraket(self.oBucket.rememberVPL + 75, self.oBucket.rememberVPL - 10)
+            self.oBucket.targetMoved = True
 
     def shootOneShort(self):
         self.mylog.info("Start Short")
         lmpPrice = self.specialRound(self.arVPShort - 1)
-        profPrice = self.specialRound(lmpPrice - 30)
+        profPrice = self.specialRound(lmpPrice - 23)
 
-        stopPrice = self.specialRound(lmpPrice + 23)
-
-        if self.sm.onlyLong():
-            profPrice = self.specialRound(lmpPrice - 10)
-            stopPrice = self.specialRound(lmpPrice + 15)
+        stopPrice = self.specialRound(lmpPrice + 28)
 
         bracket = self.ib.bracketOrder(action='SELL', quantity=self.scale1Size, limitPrice=lmpPrice, takeProfitPrice=profPrice, stopLossPrice=stopPrice, tif='GTC')
         bracket.parent.orderType = 'MKT'
@@ -171,19 +172,13 @@ class OrderManagement:
         self.oBucket.rememberVPLevel(self.specialRound(self.arVPShort))
 
     def shootTwoThreeShorts(self):
+        lmpPrice2 = self.specialRound(self.arVPShort + 10)
+        profPrice2 = self.specialRound(lmpPrice2 - 23)
 
-        lmpPrice2 = self.specialRound(self.arVPShort + 3)
-        profPrice2 = self.specialRound(lmpPrice2 - 10)
+        lmpPrice3 = self.specialRound(self.arVPShort + 20)
+        profPrice3 = self.specialRound(lmpPrice3 - 23)
 
-        stopPrice = self.specialRound(self.arVPShort + 22)
-
-        lmpPrice3 = self.specialRound(self.arVPShort + 10)
-        profPrice3 = self.specialRound(lmpPrice3 - 20)
-
-        if self.sm.onlyLong():
-            profPrice2 = self.specialRound(lmpPrice2 - 4)
-            profPrice3 = self.specialRound(lmpPrice3 - 10)
-            stopPrice = self.specialRound(self.arVPShort + 18)
+        stopPrice = self.specialRound(self.arVPShort + 28)
 
         self.mylog.info("Start Short2")
         bracket2 = self.ib.bracketOrder(action='SELL', quantity=self.scale2Size, limitPrice=lmpPrice2, takeProfitPrice=profPrice2, stopLossPrice=stopPrice, tif='GTC')
@@ -204,45 +199,46 @@ class OrderManagement:
 
         shortBigTouch = self.arVPShort > 0 and self.arVPLong == 0 and self.vpTouches.countShortT() >= 1
 
+        cond1 = self.sm.twoStepsFromLow and self.sm.emaDown and self.oBucket.timeSinceDumpOk()
+        cond2 = (self.sm.wobbleCondS or self.sm.trendCondS or self.sm.strongCondS or self.sm.extremeCondS) and self.sm.emaUp and self.oBucket.timeSinceDumpOk()
+
         # flip short, close longs
-        lowOfBar = self.rtd.getiLoc(-1).low
-        wobbleZone = self.sm.emaDiff() > -0.55 and self.sm.emaDiff() < 0.55
-
         if self.hasLongPos() and self.oBucket.firstLong and shortBigTouch:
-            # if emaDiff > -0.55 and emaDiff < 0.55 and noLongs
-            if wobbleZone and self.sm.noLong():
-                # close all positions and cancer all orders
-                self.oBucket.closeAll()
-                self.oBucket.flipShort = True
-            # else if (onlyShorts and not noShorts and not onlyLongs) or (InShortB and emaNearShort)
-            elif (self.sm.onlyShort() and not self.sm.noShort() and not self.sm.onlyLong()) or (self.sm.fInShort and self.sm.emaNearShort(self.arVPShort)):
+            if cond1 or cond2:
                 # close all positions and cancer all orders
                 self.oBucket.closeAll()
                 self.oBucket.flipShort = True
 
-        noPosition = self.noPosition() and not self.oBucket.firstShort
+        noPosition = self.noPosition() and not (self.oBucket.firstShort or self.oBucket.firstLong)
 
         canShort = shortBigTouch and noPosition
 
         if (canShort or self.oBucket.flipShort) and noPosition:
-            # if emaDiff > -0.55 and emaDiff < 0.55 and noLongs
-            if wobbleZone and self.sm.noLong():
+            self.oBucket.cancelAll()
+            if cond1 or cond2:
                 self.oBucket.flipShort = False
                 self.oBucket.stopMoved = False
+                self.oBucket.targetMoved = False
 
                 self.printLog()
-                self.shootOneShort()
-                self.shootTwoThreeShorts()
 
-            # else if (onlyShorts and not noShorts and not onlyLongs) or (InShortB and emaNearShort and not noShorts)
-            elif (self.sm.onlyShort() and not self.sm.noShort() and not self.sm.onlyLong()) or (self.sm.fInShort and self.sm.emaNearShort(self.arVPShort) and not self.sm.noShort()):
-
-                self.oBucket.flipShort = False
-                self.oBucket.stopMoved = False
-                self.printLog()
                 self.shootOneShort()
-                if not self.sm.onlyLong():
+                if self.sm.emaDiff < 2:
                     self.shootTwoThreeShorts()
+
+        if self.hasShortPos() and not self.oBucket.stopMoved:
+            # see if we need to adjust bracket
+            #timeInShortTrade > 620 or (emaDiff > 2 and not sixStepsFromLow)
+            if self.oBucket.timeInPosition() > 620 or (self.sm.emaDiff > 2 and not self.sm.sixStepsFromLow):
+                self.mylog.info("Short: Takes too long or emaDiff > 2")
+                self.oBucket.adjustBraket(self.oBucket.rememberVPL - 23, self.oBucket.rememberVPL + 10)
+                self.oBucket.stopMoved = True
+
+        if self.ib.positions()[0].position == -1 and self.sm.emaDiff < -2 and not self.oBucket.targetMoved:
+            # make target bigger
+            self.mylog.info("Short: Make target bigger")
+            self.oBucket.adjustBraket(self.oBucket.rememberVPL - 75, self.oBucket.rememberVPL + 10)
+            self.oBucket.targetMoved = True
 
     def goDoBusiness(self):
         if self.arVPLong > 0 and self.arVPShort == 0:

@@ -58,30 +58,29 @@ class AlgoVP:
         if trade.order.action == 'BUY' and self.ib.positions():
             # scale out of short happened
             if self.ib.positions()[0].position == -self.oBucket.scale1Size:
-                self.mylog.info("scale out of 2d short happened - no 3d filled")
-                # cancel 3d scale, move stops be
-                self.mylog.info("cancel 3d short")
-                self.oBucket.cancel3d(-1)
-                # self.oBucket.moveStops(self.oBucket.beStop)
-            if self.ib.positions()[0].position == -(self.oBucket.scale1Size + self.oBucket.scale3Size):
-                self.mylog.info("scale out of 2d short happened - 3d did fill")
+                self.mylog.info("scale out of 2d short happened")
                 # move stops tighter
-                self.mylog.info("move stops BE+10")
-                #self.oBucket.moveStops(self.oBucket.beStop + 10)
+                self.mylog.info("move stops lmpPrice1 + 10")
+                self.oBucket.adjustBraket(self.oBucket.rememberVPL - 23, self.oBucket.rememberVPL + 10)
+
+            if self.ib.positions()[0].position == -(self.oBucket.scale1Size + self.oBucket.scale2Size):
+                self.mylog.info("scale out of 3d short happened")
+                # move stops tighter
+                self.mylog.info("move stops (lmpPrice2 + lmpPrice3)/2")
+                self.oBucket.adjustBraket(self.oBucket.rememberVPL - 23, self.oBucket.beStop)
 
         if trade.order.action == 'SELL' and self.ib.positions():
             # scale out of long happened
             if self.ib.positions()[0].position == self.oBucket.scale1Size:
-                self.mylog.info("scale out of 2d long happened - no 3d filled")
-                # cancel 3d scale, move stops be
-                self.mylog.info("cancel 3d long")
-                self.oBucket.cancel3d(1)
-                # self.oBucket.moveStops(self.oBucket.beStop)
-            if self.ib.positions()[0].position == self.oBucket.scale1Size + self.oBucket.scale3Size:
-                self.mylog.info("scale out of 2d long happened - 3d did fill")
+                self.mylog.info("scale out of 2d long happened")
                 # move stops tighter
-                self.mylog.info("move stops BE-10 ")
-                #self.oBucket.moveStops(self.oBucket.beStop - 10)
+                self.mylog.info("move stops lmpPrice1 - 10")
+                self.oBucket.adjustBraket(self.oBucket.rememberVPL + 23, self.oBucket.rememberVPL - 10)
+            if self.ib.positions()[0].position == self.oBucket.scale1Size + self.oBucket.scale2Size:
+                self.mylog.info("scale out of 3d long happened")
+                # move stops tighter
+                self.mylog.info("move stops (lmpPrice2 + lmpPrice3)/2")
+                self.oBucket.adjustBraket(self.oBucket.rememberVPL + 23, self.oBucket.beStop)
 
     def onErrorEvent(self, reqId, errorCode, errorString, contract):
         self.mylog.info("---------------------------")
@@ -95,6 +94,7 @@ class AlgoVP:
 
         timeGap = now_time - self.requestStarted >= timeDelta
         if errorCode == 162:
+            self.mylog.info("Error Code 162 - wth?")
             self.ib.disconnect()
             self.doNotConnect = True
         if (errorCode == 2105 or errorCode == 1100) and self.hist_data_fetcher:
@@ -110,6 +110,7 @@ class AlgoVP:
     def onConnectedEvent(self):
         self.mylog.info("---------------------------")
         self.mylog.info("Connected Event")
+        self.setUpData()
 
     def onDisconnectedEvent(self):
         self.mylog.info("---------------------------")
@@ -235,6 +236,9 @@ class AlgoVP:
         for i in range(num_vp):
             nextVP = round(sVP+13.065*i, 2)
             self.vp_levels.append(nextVP)
+        self.mylog.info("---------------------------")
+        self.mylog.info("VP levels")
+        self.mylog.info(self.vp_levels[-1])
 
         # set IB
         self.mylog.info("---------------------------")

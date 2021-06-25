@@ -1,4 +1,4 @@
-from ib_insync import MarketOrder, BracketOrder
+from ib_insync import MarketOrder, LimitOrder, StopOrder
 from datetime import datetime, timedelta, time
 from dateutil import tz
 #import logging
@@ -39,6 +39,12 @@ class OrdersBucket:
     def rememberBEstop(self, level):
         self.beStop = level
 
+    def rememberTimeDump(self):
+        self.timeDump = datetime.now(tz=tz.tzlocal())
+
+    def timeSinceDumpOk(self):
+        return datetime.now(tz=tz.tzlocal()) - self.timeDump >= timedelta(minutes=1441)
+
     def timeInPosition(self):
         # return minutes passed after fill
         fillTime = self.timeOf1Trade
@@ -47,26 +53,6 @@ class OrdersBucket:
         #self.mylog.info('Time in Position')
         #self.mylog.info(nowTime - fillTime)
         return nowTime - fillTime
-
-    def cancel3d(self, direction):
-        self.mylog.info("---------------------------")
-        self.mylog.info('Cancel 3d')
-
-        if direction > 0 and self.thirdLong:
-            for tr in self.thirdLong:
-                if tr.orderStatus.status == 'Submitted':
-                    self.mylog.info('Sending Cancel to 3d scale')
-                    self.ib.cancelOrder(tr.order)
-            self.thirdLong = []
-            self.secondLong = []
-
-        if direction < 0 and self.thirdShort:
-            for tr in self.thirdShort:
-                if tr.orderStatus.status == 'Submitted':
-                    self.mylog.info('Sending Cancel to 3d scale')
-                    self.ib.cancelOrder(tr.order)
-            self.thirdShort = []
-            self.secondShort = []
 
     def cancelAll(self):
         if self.ib.openTrades() and (self.firstLong or self.firstShort):
@@ -107,17 +93,44 @@ class OrdersBucket:
         self.secondShort = []
         self.thirdShort = []
 
-    # def stopMoved(self, level):
-    #    self.mylog.info("---------------------------")
-    #    self.mylog.info('Move Stops')
+    def adjustBraket(self, profitPrice, stopPrice):
+        self.mylog.info("---------------------------")
+        self.mylog.info('Adjust Braket')
 
-     #   self.ib.sleep(10)
+        self.cancelAll()
+        self.ib.sleep(5)
+        # create OCA
+        self.OCObraket(profitPrice, stopPrice)
+        self.secondLong = []
+        self.thirdLong = []
+        self.secondShort = []
+        self.thirdShort = []
 
-    #    for opT in self.ib.openTrades():
-     #       if opT.orderStatus.status == 'PreSubmitted' and opT.order.auxPrice > 0:
-        #opT.order.triggerPrice = level
-      #          opT.order.adjustedStopPrice = level
-       #         self.ib.placeOrder(self.contract, opT.order)
+    def OCObraket(self, profitPrice, stopPrice):
+        self.mylog.info("---------------------------")
+        self.mylog.info('OCO Braket')
+
+        reverseAction = "BUY"
+        if self.ib.positions()[0].position > 0:
+            reverseAction = "SELL"
+
+        quantity = abs(self.ib.positions()[0].position)
+
+        takeProfit = LimitOrder(
+            reverseAction, quantity, profitPrice,
+            orderId=self.ib.client.getReqId(),
+            transmit=False)
+        stopLoss = StopOrder(
+            reverseAction, quantity, stopPrice,
+            orderId=self.ib.client.getReqId(),
+            transmit=True)
+
+        oco_id = self.ib.client.getReqId()
+
+        oco = self.ib.oneCancelsAll([takeProfit, stopLoss], "OCO_" + oco_id, 1)
+
+        for o in oco:
+            self.ib.placeOrder(self.contract, o)
 
     def __init__(self, ib, contract, logger):
         self.mylog = logger
@@ -138,6 +151,9 @@ class OrdersBucket:
         self.rememberVPL = 0
         self.beStop = 0
         self.stopMoved = False
+        self.targetMoved = False
+
+        self.timeDump = datetime.now(tz=tz.tzlocal())
 
         self.timeOf1Trade = datetime.now(tz=tz.tzlocal())
         self.timeOf2Trade = datetime.now(tz=tz.tzlocal())
