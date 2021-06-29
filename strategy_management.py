@@ -26,7 +26,7 @@ class StrategyManagement:
         self.emaDown = self.min_data.getiLoc(-1)['ema_ind'] < self.min_data.getiLoc(-60)['ema_ind']
         self.emaDiff = self.min_data.getiLoc(-1)['ema_ind'] - self.min_data.getiLoc(-120)['ema_ind']
 
-        self.emaD0 = self.emaDiff < 0.5 and self.emaDiff > -0.5
+        self.emaD0 = self.emaDiff < 0.7 and self.emaDiff > -0.7
         self.emaD1 = self.emaDiff < 1 and self.emaDiff > -1
         self.emaD2 = self.emaDiff < 2 and self.emaDiff > -2
         self.emaD3 = self.emaDiff < 3 and self.emaDiff > -3
@@ -48,7 +48,9 @@ class StrategyManagement:
         self.sixStepsFromHigh = highestHighBig - low > 5.7*step
         self.sixStepsFromLow = high - lowestLowBig > 5.7*step
 
-        # Long cinditions
+        # Long Conditions
+        self.slowestCond = self.emaD0
+
         self.wobbleCond = self.twoStepsFromHigh and self.emaD1
 
         self.trendCond = self.threeStepsFromHigh and self.emaD4 and not self.emaD1

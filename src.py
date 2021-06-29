@@ -152,14 +152,14 @@ if (canTrade and aroundVPLevel > 0 and aroundVPLevelToShort == 0) or flipLong[1]
         strategy.entry("L1", strategy.long, 1, alert_message="Started Long")
         strategy.entry("L2", strategy.long, 2, limit=rememberVPlevel - 4, alert_message="Added Long")
         strategy.entry("L3", strategy.long, 2, limit=rememberVPlevel - 10, alert_message="Added Long")
-    else if ((onlyLongs and not noLongs and InLongB) or tooLow) and not (emaNearLong and InShortB)
+    else if ((onlyLongs and not noLongs and InLongB) or noShorts) and not (emaNearLong and InShortB)
         strategy.entry("L1", strategy.long, 1, alert_message = "Started Long")
         if not onlyShorts
             strategy.entry("L2", strategy.long, 2, limit = rememberVPlevel - 4, alert_message = "Added Long")
             strategy.entry("L3", strategy.long, 2, limit = rememberVPlevel - 10, alert_message = "Added Long")
 
 
-target1 = 130
+target1 = 120
 target2 = 40
 target3 = 80
 
@@ -168,9 +168,9 @@ longStopPrice = rememberVPlevel - 22
 
 if strategy.position_size > 0 and onlyShorts
    longStopPrice := rememberVPlevel - 14
-    target1 := 120
-    target2 := 40
     target3 := 40
+    strategy.cancel("L2")
+    strategy.cancel("L3")
 
 //Tight stop for a runner
 //if strategy.position_size > 0 and aroundVPLevelToShort > 0 and strategy.position_avg_price < aroundVPLevelToShort - 20
@@ -221,7 +221,7 @@ if strategy.position_size > 0 and aroundVPLevelToShort > 0
 
 //Start Short
 if (canShort and aroundVPLevelToShort > 0 and aroundVPLevel == 0) or flipShort[1]
-   if emaDiff > -0.55 and emaDiff < 0.55 and noLongs
+    if emaDiff > -0.55 and emaDiff < 0.55 and noLongs
         strategy.entry("S1", strategy.short, 1, alert_message = "Started Short")
         strategy.entry("S2", strategy.short, 2, limit= rememberVPlevelShort + 3, alert_message = "Added Short")
         strategy.entry("S3", strategy.short, 2, limit= rememberVPlevelShort + 10, alert_message = "Added Short")
@@ -241,7 +241,7 @@ if strategy.position_size[1] < 0 and strategy.position_size >= 0
 //Stop Price
 shortStopPrice = rememberVPlevelShort + 22
 
-targetS1 = 130
+targetS1 = 120
 if targetS1[1] < targetS1
    targetS1 := targetS1[1]
 targetS2 = 40
@@ -252,6 +252,9 @@ if strategy.position_size < 0 and onlyLongs
     targetS1 := 40
     targetS2 := 16
     targetS3 := 40
+    //strategy.cancel("S2")
+    //strategy.cancel("S3")
+
 //if strategy.position_size < 0 and onlyLongs and aroundVPLevel > 0
 // shortStopPrice := rememberVPlevelShort + 14
 

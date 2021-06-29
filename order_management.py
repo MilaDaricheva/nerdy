@@ -70,11 +70,11 @@ class OrderManagement:
         # remember level of entry
         self.oBucket.rememberVPLevel(self.specialRound(self.arVPLong))
 
-    def shootTwoThreeLongs(self):
-        lmpPrice2 = self.specialRound(self.arVPLong - 10)
+    def shootTwoThreeLongs(self, t2, t3):
+        lmpPrice2 = self.specialRound(self.arVPLong - t2)
         profPrice2 = self.specialRound(lmpPrice2 + 23)
 
-        lmpPrice3 = self.specialRound(self.arVPLong - 20)
+        lmpPrice3 = self.specialRound(self.arVPLong - t3)
         profPrice3 = self.specialRound(lmpPrice3 + 23)
 
         stopPrice = self.specialRound(self.arVPLong - 28)
@@ -130,15 +130,20 @@ class OrderManagement:
                 if self.sm.emaDiff > -2:
                     # Shoot All
                     self.shootOneLong()
-                    self.shootTwoThreeLongs()
+                    self.shootTwoThreeLongs(10, 20)
                 else:
                     # Long 1
                     self.shootOneLong()
                     if self.sm.sixStepsFromHigh:
                         # Long 2 and 3
-                        self.shootTwoThreeLongs()
+                        self.shootTwoThreeLongs(10, 20)
                         self.oBucket.rememberTimeDump()
+            elif self.sm.slowestCond:
+                # Shoot All with diferent entries
+                self.shootOneLong()
+                self.shootTwoThreeLongs(3, 10)
 
+        # Adjust orders
         if self.hasLongPos() and not self.oBucket.stopMoved:
             # see if we need to adjust bracket
             #timeInLongTrade > 620 or (emaDiff < -2 and not sixStepsFromHigh)
@@ -146,12 +151,12 @@ class OrderManagement:
                 self.mylog.info("Long: Takes too long or emaDiff < -2")
                 self.oBucket.adjustBraket(self.oBucket.rememberVPL + 23, self.oBucket.rememberVPL - 10)
                 self.oBucket.stopMoved = True
-
-        if self.ib.positions()[0].position == 1 and self.sm.emaDiff > 2 and not self.oBucket.targetMoved:
-            # make target bigger
-            self.mylog.info("Long: Make target bigger")
-            self.oBucket.adjustBraket(self.oBucket.rememberVPL + 75, self.oBucket.rememberVPL - 10)
-            self.oBucket.targetMoved = True
+        if self.ib.positions():
+            if self.ib.positions()[0].position == 1 and self.sm.emaDiff > 2 and not self.oBucket.targetMoved:
+                # make target bigger
+                self.mylog.info("Long: Make target bigger")
+                self.oBucket.adjustBraket(self.oBucket.rememberVPL + 75, self.oBucket.rememberVPL - 10)
+                self.oBucket.targetMoved = True
 
     def shootOneShort(self):
         self.mylog.info("Start Short")
@@ -234,11 +239,12 @@ class OrderManagement:
                 self.oBucket.adjustBraket(self.oBucket.rememberVPL - 23, self.oBucket.rememberVPL + 10)
                 self.oBucket.stopMoved = True
 
-        if self.ib.positions()[0].position == -1 and self.sm.emaDiff < -2 and not self.oBucket.targetMoved:
-            # make target bigger
-            self.mylog.info("Short: Make target bigger")
-            self.oBucket.adjustBraket(self.oBucket.rememberVPL - 75, self.oBucket.rememberVPL + 10)
-            self.oBucket.targetMoved = True
+        if self.ib.positions():
+            if self.ib.positions()[0].position == -1 and self.sm.emaDiff < -2 and not self.oBucket.targetMoved:
+                # make target bigger
+                self.mylog.info("Short: Make target bigger")
+                self.oBucket.adjustBraket(self.oBucket.rememberVPL - 75, self.oBucket.rememberVPL + 10)
+                self.oBucket.targetMoved = True
 
     def goDoBusiness(self):
         if self.arVPLong > 0 and self.arVPShort == 0:

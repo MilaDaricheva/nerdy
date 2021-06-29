@@ -80,7 +80,7 @@ cancelalltime = timeinrange("1", "1513-1515:123456")
 
 
 ///////////////////////////////////////////////////
-// Steps
+// Steps strategy_management.py
 twoStepsFromHigh = highestHighBig - low > 1.8*step
 twoStepsFromLow = high - lowestLowBig > 1.8*step
 
@@ -119,15 +119,15 @@ emaD3 = emaDiff < 3 and emaDiff > -3
 emaD4 = emaDiff < 4 and emaDiff > -4
 emaD5 = emaDiff < 5 and emaDiff > -5
 
-lowestLowDiff = lowest(emaDiff, 1440)
+//lowestLowDiff = lowest(emaDiff, 1440)
 
 
-plotchar(lowestLowDiff, "lowestLowDiff", "", location.top)
+//plotchar(lowestLowDiff, "lowestLowDiff", "", location.top)
 plotchar(emaDiff, "emaDiff", "", location.top)
 
 
 ///////////////////////////////////////////////////
-// Entry & Exit signals
+// Entry & Exit signals. strategy_management.py
 
 wobbleCond = twoStepsFromHigh and emaD1
 
@@ -140,12 +140,14 @@ extremeCond = sixStepsFromHigh and not emaD5
 //order_management.py
 
 flipLong = false
+cond1 = twoStepsFromHigh and emaUp
+cond2 = (wobbleCond or trendCond or strongCond or extremeCond) and emaDown
+cond3 = emaDiff > 0
+
 //Close shorts
+
 if strategy.position_size < 0 and aroundVPLevel > 0
-   cond1 = twoStepsFromHigh and emaUp
-    cond2 = (wobbleCond or trendCond or strongCond or extremeCond) and emaDown
-    cond3 = emaDiff > 0
-    if cond1 or cond2 or cond3
+   if cond1 or cond2 or cond3
        strategy.close_all(comment="Closed all Shorts", alert_message="Closed all Shorts")
         flipLong := true
 
@@ -163,7 +165,7 @@ if (canTrade and aroundVPLevel > 0) or flipLong[1]
     strategy.cancel("S2")
     strategy.cancel("S3")
 
-    if (twoStepsFromHigh and emaUp) or ((wobbleCond or trendCond or strongCond or extremeCond) and emaDown)
+    if cond1 or cond2
        if emaDiff < -2
             strategy.entry("L1", strategy.long, 1, limit=rememberVPlevel, alert_message="Started Long")
             if extremeCond
@@ -180,12 +182,7 @@ target3 = 92
 // Determine stop loss prices
 longStopPrice = rememberVPlevel - 28
 
-//if strategy.position_size == 0 and emaDiff < -2
-// strategy.cancel("L2")
-// strategy.cancel("L3")
-// longStopPrice := strategy.position_avg_price - 10
-
-if strategy.position_size > 0 and timeInLongTrade > 620
+if strategy.position_size > 0 and (timeInLongTrade > 620 or (emaDiff < -2 and not sixStepsFromHigh))
    strategy.cancel("L2")
     strategy.cancel("L3")
     longStopPrice := strategy.position_avg_price - 10
@@ -195,11 +192,9 @@ if strategy.position_size[1] == 3 and strategy.position_size == 1
     strategy.cancel("L3")
     longStopPrice := strategy.position_avg_price + 10
 
-if emaDiff > 1.5 and strategy.position_size == 1
-   target1 := 200
+if emaDiff > 2 and strategy.position_size == 1
+   target1 := 300
 
-if emaDiff > 4 and strategy.position_size == 1
-   target1 := 400
 
 //should never get bigger during the open trade
 if longStopPrice < longStopPrice[1] and strategy.position_size > 0 and timeInLongTrade > 5
@@ -229,7 +224,8 @@ strongCondS = fourStepsFromLow and not emaD4 and emaD5
 
 extremeCondS = sixStepsFromLow and not emaD5
 
-lastDump = barssince(sixStepsFromHigh)
+
+lastDump = barssince(sixStepsFromHigh) // to bucket.py
 
 if not lastDump
     if lastDump[1] > 0
@@ -280,15 +276,9 @@ targetS1 = 92
 targetS2 = 92
 targetS3 = 92
 
-//if strategy.position_size == 0 and emaDiff > 2
-// strategy.cancel("S2")
-// strategy.cancel("S3")
-// shortStopPrice := strategy.position_avg_price + 10
-
-if strategy.position_size < 0 and timeInShortTrade > 620
+if strategy.position_size < 0 and (timeInShortTrade > 620 or (emaDiff > 2 and not sixStepsFromLow))
    strategy.cancel("S2")
     strategy.cancel("S3")
-    //targetS1 := 80
     shortStopPrice := strategy.position_avg_price + 10
 
 if strategy.position_size[1] == -3 and strategy.position_size == -1
@@ -296,11 +286,9 @@ if strategy.position_size[1] == -3 and strategy.position_size == -1
     strategy.cancel("S3")
     shortStopPrice := strategy.position_avg_price - 10
 
-if emaDiff < -1.5 and strategy.position_size == -1
-   targetS1 := 200
+if emaDiff < -2 and strategy.position_size == -1
+   targetS1 := 300
 
-if emaDiff < -4 and strategy.position_size == -1
-   targetS1 := 400
 
 //should never get bigger during the open trade
 if shortStopPrice > shortStopPrice[1] and strategy.position_size < 0 and timeInShortTrade > 5
@@ -320,11 +308,11 @@ if strategy.position_size[1] < 0 and strategy.position_size >= 0
 
 ///////////////////////////////////////////////////
 //close and cancel all eod
-//if closealltime
-//    strategy.close_all(alert_message= "Closed All Trades")
+if closealltime
+   strategy.close_all(alert_message = "Closed All Trades")
 
-//if cancelalltime
-// strategy.cancel_all()
+if cancelalltime
+   strategy.cancel_all()
 
 
 ///////////////////////////////////////////////////

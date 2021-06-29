@@ -124,7 +124,7 @@ class AlgoVP:
 
     def timeToClose(self):
         now_time = datetime.now(tz=tz.tzlocal())
-        close_time_from = datetime(now_time.year, now_time.month, now_time.day, 16, 10, 0, 0, tz.tzlocal())
+        close_time_from = datetime(now_time.year, now_time.month, now_time.day, 16, 50, 0, 0, tz.tzlocal())
         close_time_to = datetime(now_time.year, now_time.month, now_time.day, 16, 59, 0, 0, tz.tzlocal())
 
         if now_time < close_time_to and now_time > close_time_from:
@@ -134,7 +134,7 @@ class AlgoVP:
 
     def timeIsOk(self):
         now_time = datetime.now(tz=tz.tzlocal())
-        eod_time = datetime(now_time.year, now_time.month, now_time.day, 16, 0, 0, 0, tz.tzlocal())
+        eod_time = datetime(now_time.year, now_time.month, now_time.day, 16, 50, 0, 0, tz.tzlocal())
         night_time = datetime(now_time.year, now_time.month, now_time.day, 18, 5, 0, 0, tz.tzlocal())
 
         if now_time < eod_time or now_time > night_time:
@@ -163,14 +163,14 @@ class AlgoVP:
             #timeDelta = timedelta(minutes=5)
             timeGap = datetime.now(tz=tz.tzlocal()) - self.requestStarted >= timedelta(minutes=5)
 
-            if self.timeToClose() and (self.oBucket.firstLong or self.oBucket.firstShort):
-                self.mylog.info("---------------------------")
-                self.mylog.info("timeToClose")
-                self.oBucket.closeAll()
-                # historical data?
-                self.hist_data_fetcher.killFetcher()
-                self.hist_data_fetcher = None
-                self.clientID = self.clientID + 1
+            # if self.timeToClose() and (self.oBucket.firstLong or self.oBucket.firstShort):
+            #    self.mylog.info("---------------------------")
+            #    self.mylog.info("timeToClose")
+            #    self.oBucket.closeAll()
+            # historical data?
+            #    self.hist_data_fetcher.killFetcher()
+            #    self.hist_data_fetcher = None
+            #    self.clientID = self.clientID + 1
 
             if self.timeIsOk() and not self.deadZone():
                 if not self.hist_data_fetcher:
@@ -203,7 +203,7 @@ class AlgoVP:
                         om = OrderManagement(self.ib, self.contract, sm, self.oBucket, rtd, self.vpTouches, self.mylog)
                         om.goDoBusiness()
                     else:
-                        if timeGap and not histDataOk:
+                        if timeGap and self.hist_data_fetcher and not histDataOk:
                             self.mylog.info("---------------------------")
                             self.mylog.info("Hist Data not OK, kill fetcher, UTC Time")
                             self.mylog.info(nowTime)
