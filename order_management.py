@@ -147,7 +147,7 @@ class OrderManagement:
         if self.hasLongPos() and not self.oBucket.stopMoved:
             # see if we need to adjust bracket
             #timeInLongTrade > 620 or (emaDiff < -2 and not sixStepsFromHigh)
-            if self.oBucket.timeInPosition() > 620 or (self.sm.emaDiff < -2 and not self.sm.sixStepsFromHigh):
+            if self.oBucket.timeInPosition() > timedelta(minutes=620) or (self.sm.emaDiff < -2 and not self.sm.sixStepsFromHigh):
                 self.mylog.info("Long: Takes too long or emaDiff < -2")
                 self.oBucket.adjustBraket(self.oBucket.rememberVPL + 23, self.oBucket.rememberVPL - 10)
                 self.oBucket.stopMoved = True
@@ -234,7 +234,7 @@ class OrderManagement:
         if self.hasShortPos() and not self.oBucket.stopMoved:
             # see if we need to adjust bracket
             #timeInShortTrade > 620 or (emaDiff > 2 and not sixStepsFromLow)
-            if self.oBucket.timeInPosition() > 620 or (self.sm.emaDiff > 2 and not self.sm.sixStepsFromLow):
+            if self.oBucket.timeInPosition() > timedelta(minutes=620) or (self.sm.emaDiff > 2 and not self.sm.sixStepsFromLow):
                 self.mylog.info("Short: Takes too long or emaDiff > 2")
                 self.oBucket.adjustBraket(self.oBucket.rememberVPL - 23, self.oBucket.rememberVPL + 10)
                 self.oBucket.stopMoved = True

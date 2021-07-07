@@ -39,11 +39,12 @@ class HistDataFetcher:
         self.min_bars.updateEvent += self.onMinBarUpdate
 
     def killFetcher(self):
-        self.mylog.info("---------------------------")
-        self.mylog.info("disconnect fetcher")
-        self.ib.cancelHistoricalData(self.min_bars)
-        self.mylog.info(self.clientID)
-        self.ib.disconnect()
+        if self.ib.isConnected():
+            self.mylog.info("---------------------------")
+            self.mylog.info("disconnect fetcher")
+            self.ib.cancelHistoricalData(self.min_bars)
+            self.mylog.info(self.clientID)
+            self.ib.disconnect()
 
     def getMinData(self):
         return self.min_data

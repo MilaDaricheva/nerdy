@@ -51,21 +51,24 @@ class HistData:
 
     def __init__(self, bars, logger):
         self.mylog = logger
-        self.bars = dropna(util.df(bars))
-        self.fillEma()
-        #self.fillStoch(420, 90, 90)
-        # self.fillStochStrategy()
-        self.l_lows = self.bars['low'].tail(40).min()
-        self.h_highs = self.bars['high'].tail(40).max()
+        if bars:
+            self.bars = dropna(util.df(bars))
+            self.fillEma()
+            #self.fillStoch(420, 90, 90)
+            # self.fillStochStrategy()
+            self.l_lows = self.bars['low'].tail(40).min()
+            self.h_highs = self.bars['high'].tail(40).max()
 
-        self.l_lows_b = self.bars['low'].tail(1440).min()
-        self.h_highs_b = self.bars['high'].tail(1440).max()
+            self.l_lows_b = self.bars['low'].tail(1440).min()
+            self.h_highs_b = self.bars['high'].tail(1440).max()
 
-        ptc = tz.gettz('US/Pacific')
-        lastDate = bars[-1].date
-        lastDate.replace(tzinfo=ptc)
+            ptc = tz.gettz('US/Pacific')
+            lastDate = bars[-1].date
+            lastDate.replace(tzinfo=ptc)
 
-        self.timeCreated = lastDate.astimezone(tz.tzutc())
+            self.timeCreated = lastDate.astimezone(tz.tzutc())
+        else:
+            self.mylog.info("No bars returned.")
 
     def printLastN(self, n):
         self.mylog.info(self.bars.tail(n))

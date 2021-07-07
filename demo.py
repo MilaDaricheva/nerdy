@@ -203,13 +203,15 @@ class AlgoVP:
                         om = OrderManagement(self.ib, self.contract, sm, self.oBucket, rtd, self.vpTouches, self.mylog)
                         om.goDoBusiness()
                     else:
-                        if timeGap and self.hist_data_fetcher and not histDataOk:
+                        if timeGap and not histDataOk:
                             self.mylog.info("---------------------------")
                             self.mylog.info("Hist Data not OK, kill fetcher, UTC Time")
                             self.mylog.info(nowTime)
-                            self.hist_data_fetcher.killFetcher()
-                            self.hist_data_fetcher = None
-                            self.clientID = self.clientID + 1
+                            self.mylog.info(timeGap)
+                            if self.hist_data_fetcher:
+                                self.hist_data_fetcher.killFetcher()
+                                self.hist_data_fetcher = None
+                                self.clientID = self.clientID + 1
 
     def __init__(self):
         # set logger

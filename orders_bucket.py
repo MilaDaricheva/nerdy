@@ -61,6 +61,7 @@ class OrdersBucket:
             self.mylog.info(self.ib.openTrades())
 
             for opT in self.ib.openTrades():
+                self.mylog.info(opT)
                 if opT.orderStatus.status == 'Submitted' and not opT.fills:
                     self.mylog.info('Sending Cancel')
                     self.ib.cancelOrder(opT.order)
@@ -119,7 +120,7 @@ class OrdersBucket:
         takeProfit = LimitOrder(
             reverseAction, quantity, profitPrice,
             orderId=self.ib.client.getReqId(),
-            transmit=False)
+            transmit=True)
         stopLoss = StopOrder(
             reverseAction, quantity, stopPrice,
             orderId=self.ib.client.getReqId(),
@@ -127,7 +128,7 @@ class OrdersBucket:
 
         oco_id = self.ib.client.getReqId()
 
-        oco = self.ib.oneCancelsAll([takeProfit, stopLoss], "OCO_" + oco_id, 1)
+        oco = self.ib.oneCancelsAll([takeProfit, stopLoss], "OCO_" + str(oco_id), 1)
 
         for o in oco:
             self.ib.placeOrder(self.contract, o)
