@@ -30,13 +30,16 @@ class HistDataFetcher:
             formatDate=1,
             keepUpToDate=True)
 
-        self.mylog.info("---------------------------")
-        self.mylog.info("process his data")
+        if self.min_bars:
+            self.mylog.info("---------------------------")
+            self.mylog.info("process his data")
 
-        self.min_data = HistData(self.min_bars, self.mylog)
-        self.min_data.printLastN(4)
+            self.min_data = HistData(self.min_bars, self.mylog)
+            self.min_data.printLastN(4)
 
-        self.min_bars.updateEvent += self.onMinBarUpdate
+            self.min_bars.updateEvent += self.onMinBarUpdate
+        else:
+            self.mylog.info("No bars returned.")
 
     def killFetcher(self):
         if self.ib.isConnected():
