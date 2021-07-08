@@ -57,7 +57,7 @@ class StrategyManagement:
 
         self.strongCond = self.fourStepsFromHigh and not self.emaD4 and self.emaD5
 
-        self.extremeCond = self.sixStepsFromHigh and not self.emaD5
+        self.extremeCond = self.fiveStepsFromHigh and not self.emaD5
 
         # Short Conditions
         self.wobbleCondS = self.twoStepsFromLow and self.emaD1
@@ -66,6 +66,6 @@ class StrategyManagement:
 
         self.strongCondS = self.fourStepsFromLow and not self.emaD4 and self.emaD5
 
-        self.extremeCondS = self.sixStepsFromLow and not self.emaD5
+        self.extremeCondS = self.fiveStepsFromLow and not self.emaD5
 
         #self.ema = self.min_data.getiLoc(-1)['ema_ind']

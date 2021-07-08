@@ -156,21 +156,8 @@ class AlgoVP:
     def onRTBarUpdate(self, bars, hasNewBar):
         # new real time 5sec bar
         if hasNewBar:
-            #self.mylog.info("rt data")
-            # self.mylog.info(bars[-1])
 
-            #now_time = datetime.now(tz=tz.tzlocal())
-            #timeDelta = timedelta(minutes=5)
             timeGap = datetime.now(tz=tz.tzlocal()) - self.requestStarted >= timedelta(minutes=5)
-
-            # if self.timeToClose() and (self.oBucket.firstLong or self.oBucket.firstShort):
-            #    self.mylog.info("---------------------------")
-            #    self.mylog.info("timeToClose")
-            #    self.oBucket.closeAll()
-            # historical data?
-            #    self.hist_data_fetcher.killFetcher()
-            #    self.hist_data_fetcher = None
-            #    self.clientID = self.clientID + 1
 
             if self.timeIsOk() and not self.deadZone():
                 if not self.hist_data_fetcher:

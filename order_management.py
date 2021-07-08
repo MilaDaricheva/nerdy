@@ -25,9 +25,9 @@ class OrderManagement:
         self.mylog.info("---------------------------")
 
         self.mylog.info("emaUp")
-        self.mylog.info(self.sm.emaUp())
+        self.mylog.info(self.sm.emaUp)
         self.mylog.info("emaDown")
-        self.mylog.info(self.sm.emaDown())
+        self.mylog.info(self.sm.emaDown)
 
         self.mylog.info("onlyLong")
         self.mylog.info(self.sm.onlyLong())
@@ -134,7 +134,7 @@ class OrderManagement:
                 else:
                     # Long 1
                     self.shootOneLong()
-                    if self.sm.sixStepsFromHigh:
+                    if self.sm.fiveStepsFromHigh:
                         # Long 2 and 3
                         self.shootTwoThreeLongs(10, 20)
                         self.oBucket.rememberTimeDump()
@@ -146,8 +146,8 @@ class OrderManagement:
         # Adjust orders
         if self.hasLongPos() and not self.oBucket.stopMoved:
             # see if we need to adjust bracket
-            #timeInLongTrade > 620 or (emaDiff < -2 and not sixStepsFromHigh)
-            if self.oBucket.timeInPosition() > timedelta(minutes=620) or (self.sm.emaDiff < -2 and not self.sm.sixStepsFromHigh):
+            #timeInLongTrade > 620 or (emaDiff < -2 and not fiveStepsFromHigh)
+            if self.oBucket.timeInPosition() > timedelta(minutes=620) or (self.sm.emaDiff < -2 and not self.sm.fiveStepsFromHigh):
                 self.mylog.info("Long: Takes too long or emaDiff < -2")
                 self.oBucket.adjustBraket(self.oBucket.rememberVPL + 23, self.oBucket.rememberVPL - 10)
                 self.oBucket.stopMoved = True
@@ -233,8 +233,8 @@ class OrderManagement:
 
         if self.hasShortPos() and not self.oBucket.stopMoved:
             # see if we need to adjust bracket
-            #timeInShortTrade > 620 or (emaDiff > 2 and not sixStepsFromLow)
-            if self.oBucket.timeInPosition() > timedelta(minutes=620) or (self.sm.emaDiff > 2 and not self.sm.sixStepsFromLow):
+            #timeInShortTrade > 620 or (emaDiff > 2 and not fiveStepsFromLow)
+            if self.oBucket.timeInPosition() > timedelta(minutes=620) or (self.sm.emaDiff > 2 and not self.sm.fiveStepsFromLow):
                 self.mylog.info("Short: Takes too long or emaDiff > 2")
                 self.oBucket.adjustBraket(self.oBucket.rememberVPL - 23, self.oBucket.rememberVPL + 10)
                 self.oBucket.stopMoved = True

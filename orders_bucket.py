@@ -62,14 +62,15 @@ class OrdersBucket:
 
             for opT in self.ib.openTrades():
                 self.mylog.info(opT)
+                self.mylog.info(opT.contract.symbol)
+                self.mylog.info(opT.isDone())
+                self.mylog.info(opT.order.ocaGroup)
+                self.mylog.info(opT.order.orderType)
+                self.mylog.info(opT.orderStatus.status)
+
                 if opT.orderStatus.status == 'Submitted' and not opT.fills:
                     self.mylog.info('Sending Cancel')
                     self.ib.cancelOrder(opT.order)
-
-            # show open orders
-            # self.mylog.info("---------------------------")
-            #self.mylog.info('Should be no orders')
-            # self.mylog.info(self.ib.openOrders())
 
     def closeAll(self):
         self.cancelAll()
