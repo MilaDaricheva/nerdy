@@ -2,8 +2,8 @@
 // © auntmotya
 
 //@version = 4
-strategy("VP-Nerdy-Steps", overlay=true, pyramiding=5, initial_capital=50000, calc_on_every_tick=false, currency="USD", default_qty_value=1)
-//new rules
+strategy("VP-Strategy-Nerdy", overlay=true, pyramiding=5, initial_capital=50000, calc_on_every_tick=false, currency="USD", default_qty_value=1)
+//mega new rules
 
 
 ///////////////////////////////////////////////////
@@ -20,8 +20,8 @@ lowestLowBig = lowest(low, 1440)
 // last 24 hr high
 highestHighBig = highest(high, 1440)
 
-plotchar(lowestLowBig, "lowestLowBig", "", location.top)
-plotchar(highestHighBig, "highestHighBig", "", location.top)
+//plotchar(lowestLowBig, "lowestLowBig", "", location.top)
+//plotchar(highestHighBig, "highestHighBig", "", location.top)
 
 ///////////////////////////////////////////////////
 // Generate array of VP
@@ -63,7 +63,7 @@ var float rememberVPlevelShort = aroundVPLevelToShort
 if rememberVPlevelShort[1] != aroundVPLevelToShort and aroundVPLevelToShort > 0
    rememberVPlevelShort := aroundVPLevelToShort
 
-plotchar(rememberVPlevelShort, "rememberVPlevelShort", "", location.top)
+//plotchar(rememberVPlevelShort, "rememberVPlevelShort", "", location.top)
 
 ///////////////////////////////////////////////////
 // Time Management
@@ -72,10 +72,10 @@ timeinrange(res, sess) = > not na(time(res, sess)) ? 1: 0
 whatstime = timeinrange("1", "1500-1705:123456")
 //plotchar(whatstime, "whatstime", "", location.top)
 
-closealltime = timeinrange("1", "1509-1511:123456")
+closealltime = timeinrange("1", "1509-1511:6")
 //plotchar(closealltime, "closealltime", "", location.top)
 
-cancelalltime = timeinrange("1", "1513-1515:123456")
+cancelalltime = timeinrange("1", "1513-1515:6")
 //plotchar(cancelalltime, "cancelalltime", "", location.top)
 
 
@@ -90,6 +90,9 @@ threeStepsFromLow = high - lowestLowBig > 2.8*step
 fourStepsFromHigh = highestHighBig - low > 3.7*step
 fourStepsFromLow = high - lowestLowBig > 3.7*step
 
+fiveStepsFromHigh = highestHighBig - low > 4.7*step
+fiveStepsFromLow = high - lowestLowBig > 4.7*step
+
 sixStepsFromHigh = highestHighBig - low > 5.7*step
 sixStepsFromLow = high - lowestLowBig > 5.7*step
 
@@ -100,6 +103,8 @@ plotchar(threeStepsFromHigh, "threeStepsFromHigh", "", location.top)
 plotchar(threeStepsFromLow, "threeStepsFromLow", "", location.top)
 plotchar(fourStepsFromHigh, "fourStepsFromHigh", "", location.top)
 plotchar(fourStepsFromLow, "fourStepsFromLow", "", location.top)
+plotchar(fiveStepsFromHigh, "fiveStepsFromHigh", "", location.top)
+plotchar(fiveStepsFromLow, "fiveStepsFromLow", "", location.top)
 plotchar(sixStepsFromHigh, "sixStepsFromHigh", "", location.top)
 plotchar(sixStepsFromLow, "sixStepsFromLow", "", location.top)
 
@@ -112,22 +117,19 @@ emaUp = ema30 > ema30[60]
 emaDown = ema30 < ema30[60]
 emaDiff = ema30 - ema30[120]
 
-emaD0 = emaDiff < 0.5 and emaDiff > -0.5
+emaD0 = emaDiff < 0.7 and emaDiff > -0.7
 emaD1 = emaDiff < 1 and emaDiff > -1
 emaD2 = emaDiff < 2 and emaDiff > -2
 emaD3 = emaDiff < 3 and emaDiff > -3
 emaD4 = emaDiff < 4 and emaDiff > -4
 emaD5 = emaDiff < 5 and emaDiff > -5
 
-//lowestLowDiff = lowest(emaDiff, 1440)
-
-
-//plotchar(lowestLowDiff, "lowestLowDiff", "", location.top)
 plotchar(emaDiff, "emaDiff", "", location.top)
 
 
 ///////////////////////////////////////////////////
 // Entry & Exit signals. strategy_management.py
+slowestCond = emaD0
 
 wobbleCond = twoStepsFromHigh and emaD1
 
@@ -135,7 +137,7 @@ trendCond = threeStepsFromHigh and emaD4 and not emaD1
 
 strongCond = fourStepsFromHigh and not emaD4 and emaD5
 
-extremeCond = sixStepsFromHigh and not emaD5
+extremeCond = fiveStepsFromHigh and not emaD5
 
 //order_management.py
 
@@ -157,7 +159,7 @@ inLongTime = strategy.position_size > 0
 
 timeInLongTrade = barssince(not inLongTime)
 
-plotchar(timeInLongTrade, "timeInLongTrade", "", location.top)
+//plotchar(timeInLongTrade, "timeInLongTrade", "", location.top)
 
 //Start Long
 if (canTrade and aroundVPLevel > 0) or flipLong[1]
@@ -167,22 +169,27 @@ if (canTrade and aroundVPLevel > 0) or flipLong[1]
 
     if cond1 or cond2
        if emaDiff < -2
-            strategy.entry("L1", strategy.long, 1, limit=rememberVPlevel, alert_message="Started Long")
+            strategy.entry("L1", strategy.long, 1, limit=rememberVPlevel + 0.5, alert_message="Started Long")
             if extremeCond
                 strategy.entry("L2", strategy.long, 2, limit=rememberVPlevel - 13, alert_message="Added Long")
         else
             strategy.entry("L1", strategy.long, 1, alert_message = "Started Long")
             strategy.entry("L2", strategy.long, 2, limit = rememberVPlevel - 10, alert_message = "Added Long")
             strategy.entry("L3", strategy.long, 2, limit = rememberVPlevel - 20, alert_message = "Added Long")
+    else
+       if slowestCond or emaDiff > 5
+            strategy.entry("L1", strategy.long, 1, alert_message = "Started Long")
+            strategy.entry("L2", strategy.long, 2, limit= rememberVPlevel - 3, alert_message = "Added Long")
 
 target1 = 92
 target2 = 92
 target3 = 92
 
+
 // Determine stop loss prices
 longStopPrice = rememberVPlevel - 28
 
-if strategy.position_size > 0 and (timeInLongTrade > 620 or (emaDiff < -2 and not sixStepsFromHigh))
+if strategy.position_size > 0 and (timeInLongTrade > 620 or (emaDiff < -2 and not fiveStepsFromHigh))
    strategy.cancel("L2")
     strategy.cancel("L3")
     longStopPrice := strategy.position_avg_price - 10
@@ -195,6 +202,14 @@ if strategy.position_size[1] == 3 and strategy.position_size == 1
 if emaDiff > 2 and strategy.position_size == 1
    target1 := 300
 
+if strategy.position_size > 0 and timeInLongTrade > 1440
+   strategy.cancel("L2")
+    strategy.cancel("L3")
+    longStopPrice := strategy.position_avg_price
+
+if slowestCond
+   target2 := 40
+    longStopPrice := rememberVPlevel - 6
 
 //should never get bigger during the open trade
 if longStopPrice < longStopPrice[1] and strategy.position_size > 0 and timeInLongTrade > 5
@@ -203,8 +218,8 @@ if longStopPrice < longStopPrice[1] and strategy.position_size > 0 and timeInLon
 plotchar(longStopPrice, "longStopPrice", "", location.top)
 
 strategy.exit("exit long", from_entry="L1", qty=1, profit= target1, stop = longStopPrice, alert_message = "Closed Long")
-strategy.exit("exit long", from_entry="L2", qty=2, profit= target2, stop = longStopPrice, alert_message = "Closed Long")
-strategy.exit("exit long", from_entry="L3", qty=2, profit= target3, stop = longStopPrice, alert_message = "Closed Long")
+strategy.exit("exit long", from_entry="L2", qty=2, profit= target2, stop = longStopPrice, alert_message = "Scaled Out Long")
+strategy.exit("exit long", from_entry="L3", qty=2, profit= target3, stop = longStopPrice, alert_message = "Scaled Out Long")
 
 //demo.py
 //cancel scales if position closed
@@ -222,7 +237,7 @@ trendCondS = threeStepsFromLow and emaD4 and not emaD1
 
 strongCondS = fourStepsFromLow and not emaD4 and emaD5
 
-extremeCondS = sixStepsFromLow and not emaD5
+extremeCondS = fiveStepsFromLow and not emaD5
 
 
 lastDump = barssince(sixStepsFromHigh) // to bucket.py
@@ -244,16 +259,20 @@ inShortTime = strategy.position_size < 0
 
 timeInShortTrade = barssince(not inShortTime)
 
-plotchar(timeInShortTrade, "timeInShortTrade", "", location.top)
+//plotchar(timeInShortTrade, "timeInShortTrade", "", location.top)
 
 //order_management.py
-
+condS1 = (twoStepsFromLow and emaDown and lastDump > 1440)
+condS2 = ((wobbleCondS or trendCondS or strongCondS or extremeCondS) and emaUp and lastDump > 1440)
 //Close longs
 if strategy.position_size > 0 and aroundVPLevelToShort > 0
-   if (twoStepsFromLow and emaDown and lastDump > 1440) or ((wobbleCondS or trendCondS or strongCondS or extremeCondS) and emaUp and lastDump > 1440)
+   if condS1 or condS2
+       if emaDiff < -0.7 or trendCondS
+           strategy.close_all(comment = "Closed All Longs", alert_message = "Closed All Longs")
+            flipShort := true
+    if emaDiff < -9
        strategy.close_all(comment = "Closed All Longs", alert_message = "Closed All Longs")
         flipShort := true
-
 
 //Start Short
 if (canShort and aroundVPLevelToShort > 0) or flipShort[1]
@@ -261,10 +280,10 @@ if (canShort and aroundVPLevelToShort > 0) or flipShort[1]
     strategy.cancel("L2")
     strategy.cancel("L3")
 
-    if (twoStepsFromLow and emaDown and lastDump > 1440) or ((wobbleCondS or trendCondS or strongCondS or extremeCondS) and emaUp and lastDump > 1440)
-        if emaDiff > 2
+    if condS1 or condS2
+       if emaDiff > 2 and sixStepsFromLow
             strategy.entry("S1", strategy.short, 1, limit = rememberVPlevelShort, alert_message = "Started Short")
-        else
+        if emaDiff < 2
             strategy.entry("S1", strategy.short, 1, alert_message = "Started Short")
             strategy.entry("S2", strategy.short, 2, limit= rememberVPlevelShort + 10, alert_message = "Added Short")
             strategy.entry("S3", strategy.short, 2, limit= rememberVPlevelShort + 20, alert_message = "Added Short")
@@ -291,14 +310,16 @@ if emaDiff < -2 and strategy.position_size == -1
 
 
 //should never get bigger during the open trade
+
 if shortStopPrice > shortStopPrice[1] and strategy.position_size < 0 and timeInShortTrade > 5
    shortStopPrice := shortStopPrice[1]
 
+plotchar(targetS1, "targetS1", "", location.top)
 plotchar(shortStopPrice, "shortStopPrice", "", location.top)
 
 strategy.exit("exit short", from_entry="S1", qty=1, profit= targetS1, stop = shortStopPrice, alert_message = "Closed Short")
-strategy.exit("exit short", from_entry="S2", qty=2, profit= targetS2, stop = shortStopPrice, alert_message = "Closed Short")
-strategy.exit("exit short", from_entry="S3", qty=2, profit= targetS3, stop = shortStopPrice, alert_message = "Closed Short")
+strategy.exit("exit short", from_entry="S2", qty=2, profit= targetS2, stop = shortStopPrice, alert_message = "Scaled Out Short")
+strategy.exit("exit short", from_entry="S3", qty=2, profit= targetS3, stop = shortStopPrice, alert_message = "Scaled Out Short")
 
 //cancel short scales if position closed
 if strategy.position_size[1] < 0 and strategy.position_size >= 0

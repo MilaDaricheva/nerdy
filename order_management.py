@@ -29,15 +29,6 @@ class OrderManagement:
         self.mylog.info("emaDown")
         self.mylog.info(self.sm.emaDown)
 
-        self.mylog.info("onlyLong")
-        self.mylog.info(self.sm.onlyLong())
-        self.mylog.info("onlyShort")
-        self.mylog.info(self.sm.onlyShort())
-        self.mylog.info("noLong")
-        self.mylog.info(self.sm.noLong())
-        self.mylog.info("noShort")
-        self.mylog.info(self.sm.noShort())
-
         self.mylog.info("positions")
         self.mylog.info(self.ib.positions())
         self.mylog.info("---------------------------")

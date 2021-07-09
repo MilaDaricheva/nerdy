@@ -1,10 +1,9 @@
 from ib_insync import MarketOrder, LimitOrder, StopOrder
 from datetime import datetime, timedelta, time
 from dateutil import tz
-#import logging
-#import logging.handlers as handlers
 
-#logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO)
+import nest_asyncio
+nest_asyncio.apply()
 
 
 class OrdersBucket:
@@ -68,8 +67,11 @@ class OrdersBucket:
                 self.mylog.info(opT.order.orderType)
                 self.mylog.info(opT.orderStatus.status)
 
-                if opT.orderStatus.status == 'Submitted' and not opT.fills:
+                if opT.orderStatus.status == 'Submitted' and not opT.fills and opT.contract.symbol == 'MES':
                     self.mylog.info('Sending Cancel')
+                    self.ib.cancelOrder(opT.order)
+                if opT.order.ocaGroup and not opT.fills and opT.contract.symbol == 'MES':
+                    self.mylog.info('Sending Cancel for OCA Group')
                     self.ib.cancelOrder(opT.order)
 
     def closeAll(self):
