@@ -94,7 +94,7 @@ class OrderManagement:
 
         cond1 = self.sm.twoStepsFromHigh and self.sm.emaUp
         cond2 = (self.sm.wobbleCond or self.sm.trendCond or self.sm.strongCond or self.sm.extremeCond) and self.sm.emaDown
-        cond3 = self.sm.emaDiff > 0
+        cond3 = self.sm.emaDiff > -0.7
 
         # flip long, close short
         if self.hasShortPos() and self.oBucket.firstShort and longBigTouch:
@@ -129,7 +129,7 @@ class OrderManagement:
                         # Long 2 and 3
                         self.shootTwoThreeLongs(10, 20)
                         self.oBucket.rememberTimeDump()
-            elif self.sm.slowestCond:
+            elif self.sm.slowestCond or self.sm.emaDiff > 5:
                 # Shoot All with diferent entries
                 self.shootOneLong()
                 self.shootTwoThreeLongs(3, 10)
@@ -148,6 +148,7 @@ class OrderManagement:
                 self.mylog.info("Long: Make target bigger")
                 self.oBucket.adjustBraket(self.oBucket.rememberVPL + 75, self.oBucket.rememberVPL - 10)
                 self.oBucket.targetMoved = True
+                self.oBucket.stopMoved = True
 
     def shootOneShort(self):
         self.mylog.info("Start Short")
@@ -200,7 +201,11 @@ class OrderManagement:
 
         # flip short, close longs
         if self.hasLongPos() and self.oBucket.firstLong and shortBigTouch:
-            if cond1 or cond2:
+            if (cond1 or cond2) and (self.sm.emaDiff < -0.7 or self.sm.trendCondS):
+                # close all positions and cancer all orders
+                self.oBucket.closeAll()
+                self.oBucket.flipShort = True
+            if self.sm.emaDiff < -9:
                 # close all positions and cancer all orders
                 self.oBucket.closeAll()
                 self.oBucket.flipShort = True
@@ -211,6 +216,7 @@ class OrderManagement:
 
         if (canShort or self.oBucket.flipShort) and noPosition:
             self.oBucket.cancelAll()
+
             if cond1 or cond2:
                 self.oBucket.flipShort = False
                 self.oBucket.stopMoved = False
@@ -218,14 +224,16 @@ class OrderManagement:
 
                 self.printLog()
 
-                self.shootOneShort()
                 if self.sm.emaDiff < 2:
+                    self.shootOneShort()
                     self.shootTwoThreeShorts()
+                if self.sm.emaDiff > 2 and self.sm.sixStepsFromLow:
+                    self.shootOneShort()
 
         if self.hasShortPos() and not self.oBucket.stopMoved:
             # see if we need to adjust bracket
             #timeInShortTrade > 620 or (emaDiff > 2 and not fiveStepsFromLow)
-            if self.oBucket.timeInPosition() > timedelta(minutes=620) or (self.sm.emaDiff > 2 and not self.sm.fiveStepsFromLow):
+            if self.oBucket.timeInPosition() > timedelta(minutes=620) or (self.sm.emaDiff > 2 and not self.sm.sixStepsFromLow):
                 self.mylog.info("Short: Takes too long or emaDiff > 2")
                 self.oBucket.adjustBraket(self.oBucket.rememberVPL - 23, self.oBucket.rememberVPL + 10)
                 self.oBucket.stopMoved = True
@@ -236,6 +244,7 @@ class OrderManagement:
                 self.mylog.info("Short: Make target bigger")
                 self.oBucket.adjustBraket(self.oBucket.rememberVPL - 75, self.oBucket.rememberVPL + 10)
                 self.oBucket.targetMoved = True
+                self.oBucket.stopMoved = True
 
     def goDoBusiness(self):
         if self.arVPLong > 0 and self.arVPShort == 0:

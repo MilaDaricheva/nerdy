@@ -2,9 +2,6 @@ from ib_insync import MarketOrder, LimitOrder, StopOrder
 from datetime import datetime, timedelta, time
 from dateutil import tz
 
-import nest_asyncio
-nest_asyncio.apply()
-
 
 class OrdersBucket:
 
