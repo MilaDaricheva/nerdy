@@ -50,37 +50,39 @@ class AlgoVP:
             # short closed
             self.mylog.info("short closed")
             self.oBucket.cancelAll()
+            self.oBucket.emptyPosObject()
         if trade.order.action == 'SELL' and not self.ib.positions():
             # long closed
             self.mylog.info("long closed")
             self.oBucket.cancelAll()
+            self.oBucket.emptyPosObject()
 
-        if trade.order.action == 'BUY' and self.ib.positions():
+        # if trade.order.action == 'BUY' and self.ib.positions():
             # scale out of short happened
-            if self.ib.positions()[0].position == -self.oBucket.scale1Size:
-                self.mylog.info("scale out of 2d short happened")
-                # move stops tighter
-                self.mylog.info("move stops lmpPrice1 + 10")
-                self.oBucket.adjustBraket(self.oBucket.rememberVPL - 23, self.oBucket.rememberVPL + 10)
+        #    if self.ib.positions()[0].position == -self.oBucket.scale1Size:
+        #        self.mylog.info("scale out of 2d short happened")
+            # move stops tighter
+        #        self.mylog.info("move stops lmpPrice1 + 10")
+        #        self.oBucket.adjustBraket(self.oBucket.rememberVPL - 23, self.oBucket.rememberVPL + 10)
 
-            if self.ib.positions()[0].position == -(self.oBucket.scale1Size + self.oBucket.scale2Size):
-                self.mylog.info("scale out of 3d short happened")
-                # move stops tighter
-                self.mylog.info("move stops (lmpPrice2 + lmpPrice3)/2")
-                self.oBucket.adjustBraket(self.oBucket.rememberVPL - 23, self.oBucket.beStop)
+        #    if self.ib.positions()[0].position == -(self.oBucket.scale1Size + self.oBucket.scale2Size):
+        #        self.mylog.info("scale out of 3d short happened")
+            # move stops tighter
+        #        self.mylog.info("move stops (lmpPrice2 + lmpPrice3)/2")
+        #        self.oBucket.adjustBraket(self.oBucket.rememberVPL - 23, self.oBucket.beStop)
 
-        if trade.order.action == 'SELL' and self.ib.positions():
+        # if trade.order.action == 'SELL' and self.ib.positions():
             # scale out of long happened
-            if self.ib.positions()[0].position == self.oBucket.scale1Size:
-                self.mylog.info("scale out of 2d long happened")
-                # move stops tighter
-                self.mylog.info("move stops lmpPrice1 - 10")
-                self.oBucket.adjustBraket(self.oBucket.rememberVPL + 23, self.oBucket.rememberVPL - 10)
-            if self.ib.positions()[0].position == self.oBucket.scale1Size + self.oBucket.scale2Size:
-                self.mylog.info("scale out of 3d long happened")
-                # move stops tighter
-                self.mylog.info("move stops (lmpPrice2 + lmpPrice3)/2")
-                self.oBucket.adjustBraket(self.oBucket.rememberVPL + 23, self.oBucket.beStop)
+        #    if self.ib.positions()[0].position == self.oBucket.scale1Size:
+        #        self.mylog.info("scale out of 2d long happened")
+            # move stops tighter
+        #        self.mylog.info("move stops lmpPrice1 - 10")
+        #        self.oBucket.adjustBraket(self.oBucket.rememberVPL + 23, self.oBucket.rememberVPL - 10)
+        #    if self.ib.positions()[0].position == self.oBucket.scale1Size + self.oBucket.scale2Size:
+        #        self.mylog.info("scale out of 3d long happened")
+        #        # move stops tighter
+        #        self.mylog.info("move stops (lmpPrice2 + lmpPrice3)/2")
+        #        self.oBucket.adjustBraket(self.oBucket.rememberVPL + 23, self.oBucket.beStop)
 
     def onErrorEvent(self, reqId, errorCode, errorString, contract):
         self.mylog.info("---------------------------")
@@ -220,7 +222,7 @@ class AlgoVP:
         # main vp levels
         self.vp_levels = []
         num_vp = 50
-        sVP = 3880.51
+        sVP = 4102.61
 
         for i in range(num_vp):
             nextVP = round(sVP+13.065*i, 2)

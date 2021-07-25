@@ -2,6 +2,8 @@ from ib_insync import MarketOrder, LimitOrder, StopOrder
 from datetime import datetime, timedelta, time
 from dateutil import tz
 
+#import asyncio
+
 
 class OrdersBucket:
 
@@ -56,6 +58,9 @@ class OrdersBucket:
             self.mylog.info('Cancel All')
             self.mylog.info(self.ib.openTrades())
 
+            #loop = asyncio.get_event_loop()
+            #cancelDelay = 1
+
             for opT in self.ib.openTrades():
                 self.mylog.info(opT)
                 self.mylog.info(opT.contract.symbol)
@@ -66,10 +71,26 @@ class OrdersBucket:
 
                 if opT.orderStatus.status == 'Submitted' and not opT.fills and opT.contract.symbol == 'MES':
                     self.mylog.info('Sending Cancel')
+                    #loop.run_until_complete(self.shootCancel(opT.order, cancelDelay))
                     self.ib.cancelOrder(opT.order)
+                    #cancelDelay += 1
+                    # self.ib.cancelOrder(opT.order)
                 if opT.order.ocaGroup and not opT.fills and opT.contract.symbol == 'MES':
                     self.mylog.info('Sending Cancel for OCA Group')
+                    #loop.run_until_complete(self.shootCancel(opT.order, cancelDelay))
                     self.ib.cancelOrder(opT.order)
+                    #cancelDelay += 1
+                    # self.ib.cancelOrder(opT.order)
+
+            # loop.close()
+
+    def emptyPosObject(self):
+        self.firstLong = []
+        self.secondLong = []
+        self.thirdLong = []
+        self.firstShort = []
+        self.secondShort = []
+        self.thirdShort = []
 
     def closeAll(self):
         self.cancelAll()
@@ -87,12 +108,7 @@ class OrdersBucket:
             mOrder = MarketOrder('BUY', abs(self.ib.positions()[0].position), tif='GTC')
             self.ib.placeOrder(self.contract, mOrder)
 
-        self.firstLong = []
-        self.secondLong = []
-        self.thirdLong = []
-        self.firstShort = []
-        self.secondShort = []
-        self.thirdShort = []
+        self.emptyPosObject()
 
     def adjustBraket(self, profitPrice, stopPrice):
         self.mylog.info("---------------------------")
@@ -110,6 +126,9 @@ class OrdersBucket:
     def OCObraket(self, profitPrice, stopPrice):
         self.mylog.info("---------------------------")
         self.mylog.info('OCO Braket')
+
+        self.mylog.info(profitPrice)
+        self.mylog.info(stopPrice)
 
         reverseAction = "BUY"
         if self.ib.positions()[0].position > 0:
@@ -132,6 +151,32 @@ class OrdersBucket:
 
         for o in oco:
             self.ib.placeOrder(self.contract, o)
+
+    def adjustTarget(self, newT):
+        self.mylog.info("---------------------------")
+        self.mylog.info('New Target')
+        self.mylog.info(newT)
+
+        for opT in self.ib.openTrades():
+            self.mylog.info(opT.order.orderId)
+            self.mylog.info(self.firstLong[1].order.orderId)
+            if opT.order.orderId == self.firstLong[1].order.orderId:
+                self.mylog.info('Setting New Target')
+                opT.order.lmtPrice = self.rememberVPL + 75
+                self.ib.placeOrder(self.contract, opT.order)
+
+    def adjustTargetShort(self, newT):
+        self.mylog.info("---------------------------")
+        self.mylog.info('New Target Short')
+        self.mylog.info(newT)
+
+        for opT in self.ib.openTrades():
+            self.mylog.info(opT.order.orderId)
+            self.mylog.info(self.firstShort[1].order.orderId)
+            if opT.order.orderId == self.firstShort[1].order.orderId:
+                self.mylog.info('Setting New Target')
+                opT.order.lmtPrice = self.rememberVPL - 75
+                self.ib.placeOrder(self.contract, opT.order)
 
     def __init__(self, ib, contract, logger):
         self.mylog = logger
