@@ -162,8 +162,8 @@ class OrdersBucket:
             self.mylog.info(self.firstLong[1].order.orderId)
             if opT.order.orderId == self.firstLong[1].order.orderId:
                 self.mylog.info('Setting New Target')
-                opT.order.lmtPrice = self.rememberVPL + 75
-                self.ib.placeOrder(self.contract, opT.order)
+                self.firstLong[1].order.lmtPrice = self.rememberVPL + 75
+                self.ib.placeOrder(self.contract, self.firstLong[1].order)
 
     def adjustTargetShort(self, newT):
         self.mylog.info("---------------------------")
@@ -175,8 +175,8 @@ class OrdersBucket:
             self.mylog.info(self.firstShort[1].order.orderId)
             if opT.order.orderId == self.firstShort[1].order.orderId:
                 self.mylog.info('Setting New Target')
-                opT.order.lmtPrice = self.rememberVPL - 75
-                self.ib.placeOrder(self.contract, opT.order)
+                self.firstShort[1].order.lmtPrice = self.rememberVPL - 75
+                self.ib.placeOrder(self.contract, self.firstShort[1].order)
 
     def __init__(self, ib, contract, logger):
         self.mylog = logger

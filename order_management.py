@@ -45,13 +45,13 @@ class OrderManagement:
     def shootOneLong(self, t1):
         self.mylog.info("Start Long1")
         lmpPrice = self.specialRound(self.arVPLong + t1)
-        profPrice = self.specialRound(lmpPrice + 23)
-        profPrice0 = self.specialRound(lmpPrice + 10)
+        profPrice = self.specialRound(lmpPrice + 26)
+        profPrice0 = self.specialRound(lmpPrice + 13)
 
         stopPrice = self.specialRound(self.arVPLong - 28)
 
         if self.sm.slowestCond or self.sm.emaDiff > 5:
-            stopPrice = self.specialRound(self.arVPLong - 10)
+            stopPrice = self.specialRound(self.arVPLong - 13)
 
         bracket = self.ib.bracketOrder(action='BUY', quantity=self.scale1Size, limitPrice=lmpPrice, takeProfitPrice=profPrice, stopLossPrice=stopPrice, tif='GTC')
         if t1 == 0:
@@ -79,17 +79,17 @@ class OrderManagement:
 
     def shootTwoThreeLongs(self, t2, t3):
         lmpPrice2 = self.specialRound(self.arVPLong - t2)
-        profPrice2 = self.specialRound(lmpPrice2 + 23)
+        profPrice2 = self.specialRound(lmpPrice2 + 13)
 
         lmpPrice3 = self.specialRound(self.arVPLong - t3)
-        profPrice3 = self.specialRound(lmpPrice3 + 23)
+        profPrice3 = self.specialRound(lmpPrice3 + 52)
 
         stopPrice = self.specialRound(self.arVPLong - 28)
 
         if self.sm.slowestCond or self.sm.emaDiff > 5:
             profPrice2 = self.specialRound(lmpPrice2 + 10)
             profPrice3 = self.specialRound(lmpPrice3 + 10)
-            stopPrice = self.specialRound(self.arVPLong - 10)
+            stopPrice = self.specialRound(self.arVPLong - 13)
 
         self.mylog.info("Start Long2")
 
@@ -142,7 +142,7 @@ class OrderManagement:
 
                 if self.sm.emaDiff < -2:
                     # Shoot All
-                    self.shootOneLong(0.5)
+                    self.shootOneLong(0)
                     if self.sm.fiveStepsFromHigh:
                         self.shootTwoThreeLongs(13, 23)
                         self.oBucket.rememberTimeDump()
@@ -162,26 +162,30 @@ class OrderManagement:
             # see if we need to close long
             #timeInLongTrade > 620 or (emaDiff < -2 and not fiveStepsFromHigh)
             if self.oBucket.timeInPosition() > timedelta(minutes=620) or (self.sm.emaDiff < -2 and not self.sm.fiveStepsFromHigh):
-                self.mylog.info("Long: Takes too long or emaDiff < -2")
 
-                self.mylog.info(self.ib.positions())
+                # self.mylog.info(self.ib.positions())
 
                 rtClose = self.rtd.getiLoc(-1).close
-                self.mylog.info("rtClose")
-                self.mylog.info(rtClose)
+                # self.mylog.info("rtClose")
+                # self.mylog.info(rtClose)
 
-                avPos = self.ib.positions()[0].avgCost
-                self.mylog.info("avgCost")
-                self.mylog.info(avPos)
+                #avPos = self.ib.positions()[0].avgCost
+                # self.mylog.info("avgCost")
+                # self.mylog.info(avPos)
 
-                if rtClose < avPos - 10:
+                if rtClose < self.oBucket.beStop - 10:
+                    self.mylog.info("Trim position as it is bad.")
                     self.oBucket.closeAll()
 
-            if self.ib.positions()[0].position == 1 and self.sm.emaDiff > 2 and not self.oBucket.targetMoved:
+            # if self.ib.positions()[0].position == 1 and self.sm.emaDiff > 2 and not self.oBucket.targetMoved:
                 # make target bigger
-                self.mylog.info("Long: Make target bigger")
-                self.oBucket.adjustTarget(75)
-                self.oBucket.targetMoved = True
+                #self.mylog.info("Long: Make target bigger")
+                # self.oBucket.adjustTarget(75)
+                #self.oBucket.targetMoved = True
+
+        # check for no fill
+        if self.oBucket.firstLong and self.noPosition() and self.oBucket.timeInPosition() > timedelta(minutes=30):
+            self.oBucket.cancelAll()
 
     def shootNaughtyShort(self, t1):
         self.mylog.info("Start Naughty Short")
@@ -268,11 +272,11 @@ class OrderManagement:
         # flip short, close longs
         if self.hasLongPos() and self.oBucket.firstLong and shortBigTouch:
             if (cond1 or cond2) and (self.sm.emaDiff < -0.7 or self.sm.trendCondS):
-                # close all positions and cancer all orders
+                # close all positions and cancel all orders
                 self.oBucket.closeAll()
                 self.oBucket.flipShort = True
             if self.sm.emaDiff < -9:
-                # close all positions and cancer all orders
+                # close all positions and cancel all orders
                 self.oBucket.closeAll()
                 self.oBucket.flipShort = True
 
@@ -305,25 +309,24 @@ class OrderManagement:
             # see if we need to close all
             #timeInShortTrade > 620 or (emaDiff > 2 and not sixtepsFromLow)
             if self.oBucket.timeInPosition() > timedelta(minutes=620) or (self.sm.emaDiff > 2 and not self.sm.sixStepsFromLow):
-                self.mylog.info("Short: Takes too long or emaDiff > 2")
-                self.mylog.info(self.ib.positions())
+
+                # self.mylog.info(self.ib.positions())
 
                 rtClose = self.rtd.getiLoc(-1).close
-                self.mylog.info("rtClose")
-                self.mylog.info(rtClose)
+                # self.mylog.info("rtClose")
+                # self.mylog.info(rtClose)
 
-                avPos = self.ib.positions()[0].avgCost
-                self.mylog.info("avgCost")
-                self.mylog.info(avPos)
+                #avPos = self.ib.positions()[0].avgCost
+                # self.mylog.info("avgCost")
+                # self.mylog.info(avPos)
 
-                if rtClose > avPos + 10:
+                if rtClose > self.oBucket.rememberVPL + 10:
+                    self.mylog.info("Short: Takes too long or emaDiff > 2")
                     self.oBucket.closeAll()
 
-            if self.ib.positions()[0].position == -1 and self.sm.emaDiff < -2 and not self.oBucket.targetMoved:
-                # make target bigger
-                self.mylog.info("Short: Make target bigger")
-                self.oBucket.adjustTargetShort(75)
-                self.oBucket.targetMoved = True
+        # check for no fill
+        if self.oBucket.firstShort and self.noPosition() and self.oBucket.timeInPosition() > timedelta(minutes=30):
+            self.oBucket.cancelAll()
 
     def goDoBusiness(self):
         if self.arVPLong > 0 and self.arVPShort == 0:

@@ -32,6 +32,8 @@ class StrategyManagement:
         self.emaD3 = self.emaDiff < 3 and self.emaDiff > -3
         self.emaD4 = self.emaDiff < 4 and self.emaDiff > -4
         self.emaD5 = self.emaDiff < 5 and self.emaDiff > -5
+        self.emaD6 = self.emaDiff < 6 and self.emaDiff > -6
+        self.emaD10 = self.emaDiff < 10 and self.emaDiff > -10
 
         self.oneStepsFromHigh = highestHighBig - low > 0.9*step
         self.oneStepsFromLow = high - lowestLowBig > 0.9*step
@@ -54,13 +56,13 @@ class StrategyManagement:
         # Long Conditions
         self.slowestCond = self.oneStepsFromHigh and self.emaD0
 
-        self.wobbleCond = self.twoStepsFromHigh and self.emaD1
+        self.wobbleCond = self.twoStepsFromHigh and self.emaD3
 
-        self.trendCond = self.twoStepsFromHigh and self.emaD4 and not self.emaD1
+        self.trendCond = self.threeStepsFromHigh and self.emaD6
 
-        self.strongCond = self.fourStepsFromHigh and not self.emaD4 and self.emaD5
+        self.strongCond = self.fourStepsFromHigh and self.emaD10
 
-        self.extremeCond = self.fiveStepsFromHigh and not self.emaD5
+        self.extremeCond = self.fiveStepsFromHigh and not self.emaD10
 
         # Short Conditions
         self.wobbleCondS = self.twoStepsFromLow and self.emaD1
