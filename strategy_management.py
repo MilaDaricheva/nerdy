@@ -56,13 +56,13 @@ class StrategyManagement:
         # Long Conditions
         self.slowestCond = self.oneStepsFromHigh and self.emaD0
 
-        self.wobbleCond = self.twoStepsFromHigh and self.emaD3
+        self.wobbleCond = self.twoStepsFromHigh and self.emaD2
 
-        self.trendCond = self.threeStepsFromHigh and self.emaD6
+        self.trendCond = self.threeStepsFromHigh and self.emaD3
 
-        self.strongCond = self.fourStepsFromHigh and self.emaD10
+        self.strongCond = self.fourStepsFromHigh and self.emaD6
 
-        self.extremeCond = self.fiveStepsFromHigh and not self.emaD10
+        self.extremeCond = self.fiveStepsFromHigh and not self.emaD6
 
         # Short Conditions
         self.wobbleCondS = self.twoStepsFromLow and self.emaD1

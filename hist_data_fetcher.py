@@ -18,7 +18,7 @@ class HistDataFetcher:
 
         self.ib = IB()
 
-        self.ib.connect('127.0.0.1', 7496, clientId=self.clientID)
+        self.ib.connect('127.0.0.1', 7497, clientId=self.clientID)
 
         mesContract = Future('MES', '20210917', 'GLOBEX', 'MESU1', '5', 'USD')
 

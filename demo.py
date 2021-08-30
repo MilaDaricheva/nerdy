@@ -20,7 +20,7 @@ class AlgoVP:
         self.mylog.info("---------------------------")
         self.mylog.info("reConnect")
         if not self.ib.isConnected():
-            self.ib.connect('127.0.0.1', 7496, clientId=1)
+            self.ib.connect('127.0.0.1', 7497, clientId=1)
 
     def setUpHistData(self):
         if not self.hist_data_fetcher and not self.deadZone():
@@ -242,7 +242,7 @@ class AlgoVP:
 
         self.ib = IB()
 
-        self.ib.connect('127.0.0.1', 7496, clientId=1)
+        self.ib.connect('127.0.0.1', 7497, clientId=1)
 
         self.contract = Future('MES', '20210917', 'GLOBEX', 'MESU1', '5', 'USD')
         self.ib.qualifyContracts(self.contract)
