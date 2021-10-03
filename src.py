@@ -2,29 +2,38 @@
 // © auntmotya
 
 //@version = 4
-strategy("VP-Strategy-Nerdy", overlay=true, pyramiding=5, initial_capital=50000, calc_on_every_tick=false, currency="USD", default_qty_value=1)
-//new rules
-
+strategy("Nerdy-1000", overlay=true, pyramiding=4, initial_capital=50000, calc_on_every_tick=false, currency="USD", default_qty_value=1)
+//new rules new lines
 
 ///////////////////////////////////////////////////
 // Last bars low maybe 60 is better
 // hist_data.py
-lowestLow = lowest(low, 60)
+lowestLow = lowest(low, 40)
 
 // Last bars high
-highestHigh = highest(high, 60)
+highestHigh = highest(high, 40)
+
+// last 24 hr low
+lowestLowBig = lowest(low, 1440)
+
+// last 24 hr high
+highestHighBig = highest(high, 1440)
+
+//plotchar(lowestLowBig, "lowestLowBig", "", location.top)
+//plotchar(highestHighBig, "highestHighBig", "", location.top)
 
 ///////////////////////////////////////////////////
 // Generate array of VP
 // demo.py init
 
-lenMainVP = 50
+lenMainVP = 55
 float[] mainVP = array.new_float(0)
-sVP = 3880.51
+sVP = 4249.63
+step = 14.955
 
 for i = 0 to lenMainVP-1
    array.push(mainVP, sVP)
-    sVP := sVP+13.065
+    sVP := sVP+step
 
 // rt_data.py
 float aroundVPLevel = 0
@@ -62,11 +71,45 @@ timeinrange(res, sess) = > not na(time(res, sess)) ? 1: 0
 whatstime = timeinrange("1", "1500-1705:123456")
 //plotchar(whatstime, "whatstime", "", location.top)
 
-closealltime = timeinrange("1", "1509-1511:123456")
+closealltime = timeinrange("1", "1509-1511:6")
 //plotchar(closealltime, "closealltime", "", location.top)
 
-cancelalltime = timeinrange("1", "1513-1515:123456")
+cancelalltime = timeinrange("1", "1513-1515:6")
 //plotchar(cancelalltime, "cancelalltime", "", location.top)
+
+
+///////////////////////////////////////////////////
+// Steps strategy_management.py
+oneStepsFromHigh = highestHighBig - low > 0.9*step
+oneStepsFromLow = high - lowestLowBig > 0.9*step
+
+twoStepsFromHigh = highestHighBig - low > 1.8*step
+twoStepsFromLow = high - lowestLowBig > 1.8*step
+
+threeStepsFromHigh = highestHighBig - low > 2.8*step
+threeStepsFromLow = high - lowestLowBig > 2.8*step
+
+fourStepsFromHigh = highestHighBig - low > 3.7*step
+fourStepsFromLow = high - lowestLowBig > 3.7*step
+
+fiveStepsFromHigh = highestHighBig - low > 4.7*step
+fiveStepsFromLow = high - lowestLowBig > 4.7*step
+
+sixStepsFromHigh = highestHighBig - low > 5.7*step
+sixStepsFromLow = high - lowestLowBig > 5.7*step
+
+plotchar(oneStepsFromHigh, "oneStepsFromHigh", "", location.top)
+//plotchar(oneStepsFromLow, "oneStepsFromLow", "", location.top)
+plotchar(twoStepsFromHigh, "twoStepsFromHigh", "", location.top)
+//plotchar(twoStepsFromLow, "twoStepsFromLow", "", location.top)
+plotchar(threeStepsFromHigh, "threeStepsFromHigh", "", location.top)
+//plotchar(threeStepsFromLow, "threeStepsFromLow", "", location.top)
+//plotchar(fourStepsFromHigh, "fourStepsFromHigh", "", location.top)
+//plotchar(fourStepsFromLow, "fourStepsFromLow", "", location.top)
+//plotchar(fiveStepsFromHigh, "fiveStepsFromHigh", "", location.top)
+//plotchar(fiveStepsFromLow, "fiveStepsFromLow", "", location.top)
+//plotchar(sixStepsFromHigh, "sixStepsFromHigh", "", location.top)
+//plotchar(sixStepsFromLow, "sixStepsFromLow", "", location.top)
 
 ///////////////////////////////////////////////////
 // EMA
@@ -76,67 +119,36 @@ ema30 = ema(close, 540)
 emaUp = ema30 > ema30[60]
 emaDown = ema30 < ema30[60]
 emaDiff = ema30 - ema30[120]
-//plotchar(emaDiff, "ema dif", "", location.top)
-//plotchar(emaDown, "emaDown", "", location.top)
 
-emaNearLong = ema30 > aroundVPLevel and ema30 < aroundVPLevel + 2
-emaNearShort = ema30 < aroundVPLevelToShort and ema30 > aroundVPLevelToShort - 2
+emaD0 = emaDiff < 0.7 and emaDiff > -0.7
+emaD1 = emaDiff < 1 and emaDiff > -1
+emaD2 = emaDiff < 2 and emaDiff > -2
+emaD3 = emaDiff < 3 and emaDiff > -3
+emaD4 = emaDiff < 4 and emaDiff > -4
+emaD5 = emaDiff < 5 and emaDiff > -5
+emaD6 = emaDiff < 6 and emaDiff > -6
+emaD10 = emaDiff < 10 and emaDiff > -10
+
+plotchar(emaDiff, "emaDiff", "", location.top)
 
 
 ///////////////////////////////////////////////////
-// Big TimeFrame
-// hist_data.py
+// Entry & Exit signals. strategy_management.py
+slowestCond = oneStepsFromHigh and emaD0
 
-bigTimeFrame = close
-bigRsiL = rsi(bigTimeFrame, 420)
-bigStoch = stoch(bigRsiL, bigRsiL, bigRsiL, 420)
-bigK = sma(bigStoch, 90)
-bigD = sma(bigK, 90)
+wobbleCond = twoStepsFromHigh and emaD2
 
+trendCond = threeStepsFromHigh and emaD3
 
-InLongB = false
-InShortB = false
-DiffSensB = 1
-EnterLongB = bigK > bigD + DiffSensB and bigK[1] <= bigD[1] + DiffSensB and not InLongB[1]
-EnterShortB = bigK < bigD - DiffSensB and bigK[1] >= bigD[1] - DiffSensB and not InShortB[1]
-InLongB := EnterLongB or InLongB[1] and not EnterShortB
-InShortB := EnterShortB or InShortB[1] and not EnterLongB
+strongCond = fourStepsFromHigh and emaD6
 
-//plotchar(InLongB, "InLongB", "", location.top)
-//plotchar(InShortB, "InShortB", "", location.top)
-//plotchar(bigK, "bigK", "", location.top)
-//plotchar(bigD, "bigD", "", location.top)
-
-//strategy_management.py
-
-onlyLongs = (emaUp or InLongB)
-onlyShorts = (emaDown or InShortB)
-
-noLongs = bigK > 50 or bigD > 50
-noShorts = bigK < 50 or bigD < 50
-
-tooHigh = bigK > 80 or bigD > 80
-tooLow = bigK < 21 or bigD < 21
-
-//plotchar(onlyLongs, "onlyLongs", "", location.top)
-//plotchar(onlyShorts, "onlyShorts", "", location.top)
-//plotchar(noLongs, "noLongs", "", location.top)
-//plotchar(noShorts, "noShorts", "", location.top)
-
-///////////////////////////////////////////////////
-// Entry & Exit signals
-
+extremeCond = fiveStepsFromHigh and not emaD6
 
 //order_management.py
 
-flipLong = false
-//Close shorts
-if strategy.position_size < 0 and aroundVPLevel > 0 and aroundVPLevelToShort == 0
-   if ((onlyLongs and not noLongs and InLongB) or noShorts) and not (emaNearLong and InShortB)
-       strategy.close_all(comment="Closed all Shorts", alert_message="Closed all Shorts")
-        flipLong := true
-        strategy.cancel("S2")
-        strategy.cancel("S3")
+
+cond1 = twoStepsFromHigh and emaUp
+cond2 = (wobbleCond or trendCond or strongCond or extremeCond) and emaDown
 
 canTrade = strategy.position_size == 0 and not whatstime
 
@@ -147,133 +159,122 @@ timeInLongTrade = barssince(not inLongTime)
 //plotchar(timeInLongTrade, "timeInLongTrade", "", location.top)
 
 //Start Long
-if (canTrade and aroundVPLevel > 0 and aroundVPLevelToShort == 0) or flipLong[1]
-   if emaDiff > -0.55 and emaDiff < 0.55 and noShorts and not (emaNearLong and InShortB)
-        strategy.entry("L1", strategy.long, 1, alert_message="Started Long")
-        strategy.entry("L2", strategy.long, 2, limit=rememberVPlevel - 4, alert_message="Added Long")
-        strategy.entry("L3", strategy.long, 2, limit=rememberVPlevel - 10, alert_message="Added Long")
-    else if ((onlyLongs and not noLongs and InLongB) or noShorts) and not (emaNearLong and InShortB)
-        strategy.entry("L1", strategy.long, 1, alert_message = "Started Long")
-        if not onlyShorts
-            strategy.entry("L2", strategy.long, 2, limit = rememberVPlevel - 4, alert_message = "Added Long")
-            strategy.entry("L3", strategy.long, 2, limit = rememberVPlevel - 10, alert_message = "Added Long")
+if (canTrade and aroundVPLevel > 0)
+   if cond1 or cond2
+       if emaDiff > -4 and emaDiff < 0
+            strategy.entry("L0", strategy.long, 1, limit=rememberVPlevel, alert_message="Started Long")
+            strategy.entry("L1", strategy.long, 1, limit=rememberVPlevel, alert_message="Added Long")
+            strategy.entry("L2", strategy.long, 1, limit=rememberVPlevel - 13, alert_message="Added Long")
+            strategy.entry("L3", strategy.long, 1, limit=rememberVPlevel - 13, alert_message="Added Long")
+        if emaDiff > 0
+            strategy.entry("L0", strategy.long, 1, alert_message = "Started Long")
+            strategy.entry("L1", strategy.long, 1, alert_message = "Added Long")
+            strategy.entry("L2", strategy.long, 1, limit = rememberVPlevel - 4, alert_message = "Added Long")
+            strategy.entry("L3", strategy.long, 1, limit = rememberVPlevel - 6, alert_message = "Added Long")
+    else
+       if slowestCond or (emaDiff > 1 and oneStepsFromHigh)
+            strategy.entry("L0", strategy.long, 1, alert_message = "Started Long")
+            strategy.entry("L1", strategy.long, 1, alert_message = "Added Long")
+            strategy.entry("L2", strategy.long, 1, limit = rememberVPlevel - 4, alert_message = "Added Long")
+            strategy.entry("L3", strategy.long, 1, limit = rememberVPlevel - 6, alert_message = "Added Long")
 
 
-target1 = 120
+//Scoopy
+scoopOk = strategy.position_avg_price < close and oneStepsFromHigh and timeInLongTrade > 120
+
+//if strategy.position_size > 0 and strategy.position_size < 3 and aroundVPLevel > 0 and scoopOk
+// if emaDiff < 0
+//        strategy.entry("Lscoop", strategy.long, 1, limit = rememberVPlevel, alert_message = "Scooping")
+//    else
+//        strategy.entry("Lscoop", strategy.long, 1, alert_message = "Scooping")
+
+
+target0 = 110
+target1 = 40
+
 target2 = 40
-target3 = 80
+target3 = 56
+
+targetScoop = 28
+
 
 // Determine stop loss prices
-longStopPrice = rememberVPlevel - 22
+longStopPrice = rememberVPlevel - 20
+scoopStopPrice = rememberVPlevel - 3
 
-if strategy.position_size > 0 and onlyShorts
-   longStopPrice := rememberVPlevel - 14
-    target3 := 40
-    strategy.cancel("L2")
-    strategy.cancel("L3")
 
-//Tight stop for a runner
-//if strategy.position_size > 0 and aroundVPLevelToShort > 0 and strategy.position_avg_price < aroundVPLevelToShort - 20
-// longStopPrice := aroundVPLevelToShort - 8
+//if emaDiff > -2
+// longStopPrice := rememberVPlevel - 13
 
 //should never get bigger during the open trade
 if longStopPrice < longStopPrice[1] and strategy.position_size > 0 and timeInLongTrade > 5
    longStopPrice := longStopPrice[1]
 
+if longStopPrice > scoopStopPrice
+   scoopStopPrice := longStopPrice
+
 plotchar(longStopPrice, "longStopPrice", "", location.top)
 
-strategy.exit("exit long", from_entry="L1", qty=1, profit= target1, stop = longStopPrice, alert_message = "Closed Long")
-strategy.exit("exit long", from_entry="L2", qty=2, profit= target2, stop = longStopPrice, alert_message = "Closed Long")
-strategy.exit("exit long", from_entry="L3", qty=2, profit= target3, stop = longStopPrice, alert_message = "Closed Long")
+strategy.exit("exit long", from_entry="L0", qty=1, profit= target0, stop = longStopPrice, alert_message = "Scaled Out Long")
+strategy.exit("exit long", from_entry="L1", qty=1, profit= target1, stop = longStopPrice, alert_message = "Scaled Out Long")
+strategy.exit("exit long", from_entry="L2", qty=1, profit= target2, stop = longStopPrice, alert_message = "Scaled Out Long")
+strategy.exit("exit long", from_entry="L3", qty=1, profit= target3, stop = longStopPrice, alert_message = "Scaled Out Long")
+
+strategy.exit("exit scoop", from_entry="Lscoop", qty=1, profit= targetScoop, stop = scoopStopPrice, alert_message = "Scoop done")
 
 //demo.py
 //cancel scales if position closed
 if strategy.position_size[1] > 0 and strategy.position_size <= 0
-   strategy.cancel("L2")
+   strategy.cancel("L0")
+    strategy.cancel("L1")
+    strategy.cancel("L2")
     strategy.cancel("L3")
 
+
 ///////////////////////////////////////////////////
-// Short Entries
+// Short Conditions
+
+wobbleCondS = twoStepsFromLow and emaD1
+
+trendCondS = threeStepsFromLow and emaD4 and not emaD1
+
+strongCondS = fourStepsFromLow and not emaD4 and emaD5
+
+extremeCondS = fiveStepsFromLow and not emaD5
+
+
+lastDump = barssince(sixStepsFromHigh) // to bucket.py
+
+if not lastDump
+    if lastDump[1] > 0
+        lastDump := lastDump[1] + 1
+    else
+        lastDump := 1441
+
+//plotchar(lastDump, "lastDump", "", location.top)
 
 
 canShort = strategy.position_size == 0 and not whatstime
-
-flipShort = false
 
 inShortTime = strategy.position_size < 0
 
 timeInShortTrade = barssince(not inShortTime)
 
+//plotchar(timeInShortTrade, "timeInShortTrade", "", location.top)
+
 //order_management.py
+condS1 = (twoStepsFromLow and emaDown and lastDump > 1440)
+condS2 = ((wobbleCondS or trendCondS or strongCondS or extremeCondS) and emaUp and lastDump > 1440)
 
 //Close longs
 if strategy.position_size > 0 and aroundVPLevelToShort > 0
-   if emaDiff > -0.55 and emaDiff < 0.55 and noLongs
+   if condS1 or condS2
+       if (emaDiff < -0.7 or trendCondS) and aroundVPLevelToShort[1] > 0
+           strategy.close_all(comment = "Closed All Longs", alert_message = "Closed All Longs")
+    if emaDiff < -5
        strategy.close_all(comment = "Closed All Longs", alert_message = "Closed All Longs")
-        flipShort := true
-        strategy.cancel("L2")
-        strategy.cancel("L3")
-    else if (onlyShorts and not noShorts and not onlyLongs) or (InShortB and emaNearShort)
-       strategy.close_all(comment = "Closed All Longs", alert_message = "Closed All Longs")
-        flipShort := true
-        strategy.cancel("L2")
-        strategy.cancel("L3")
 
-//Start Short
-if (canShort and aroundVPLevelToShort > 0 and aroundVPLevel == 0) or flipShort[1]
-    if emaDiff > -0.55 and emaDiff < 0.55 and noLongs
-        strategy.entry("S1", strategy.short, 1, alert_message = "Started Short")
-        strategy.entry("S2", strategy.short, 2, limit= rememberVPlevelShort + 3, alert_message = "Added Short")
-        strategy.entry("S3", strategy.short, 2, limit= rememberVPlevelShort + 10, alert_message = "Added Short")
-    else if (onlyShorts and not noShorts and not onlyLongs) or (InShortB and emaNearShort and not noShorts)
-        strategy.entry("S1", strategy.short, 1, alert_message = "Started Short")
-        if not onlyLongs
-           strategy.entry("S2", strategy.short, 2, limit = rememberVPlevelShort + 3, alert_message = "Added Short")
-            strategy.entry("S3", strategy.short, 2, limit= rememberVPlevelShort + 10, alert_message = "Added Short")
-
-
-//cancel short scales if position closed
-if strategy.position_size[1] < 0 and strategy.position_size >= 0
-   strategy.cancel("S2")
-    strategy.cancel("S3")
-
-
-//Stop Price
-shortStopPrice = rememberVPlevelShort + 22
-
-targetS1 = 120
-if targetS1[1] < targetS1
-   targetS1 := targetS1[1]
-targetS2 = 40
-targetS3 = 80
-
-if strategy.position_size < 0 and onlyLongs
-   shortStopPrice := rememberVPlevelShort + 18
-    targetS1 := 40
-    targetS2 := 16
-    targetS3 := 40
-    //strategy.cancel("S2")
-    //strategy.cancel("S3")
-
-//if strategy.position_size < 0 and onlyLongs and aroundVPLevel > 0
-// shortStopPrice := rememberVPlevelShort + 14
-
-//Tight stop for a runner
-//if strategy.position_size < 0 and aroundVPLevel > 0 and strategy.position_avg_price > aroundVPLevel + 20
-// shortStopPrice := aroundVPLevel + 6
-
-
-//should never get bigger during the open trade
-if shortStopPrice > shortStopPrice[1] and strategy.position_size < 0 and timeInShortTrade > 5
-   shortStopPrice := shortStopPrice[1]
-
-plotchar(shortStopPrice, "shortStopPrice", "", location.top)
-//plotchar(timeInShortTrade, "timeInShortTrade", "", location.top)
-
-strategy.exit("exit short", from_entry="S1", qty=1, profit= targetS1, stop = shortStopPrice, alert_message = "Closed Short")
-strategy.exit("exit short", from_entry="S2", qty=2, profit= targetS2, stop = shortStopPrice, alert_message = "Closed Short")
-strategy.exit("exit short", from_entry="S3", qty=2, profit= targetS3, stop = shortStopPrice, alert_message = "Closed Short")
-
+///////////////////////////////////////////////////
 //close and cancel all eod
 if closealltime
    strategy.close_all(alert_message = "Closed All Trades")
@@ -284,43 +285,61 @@ if cancelalltime
 
 ///////////////////////////////////////////////////
 // Visualization
+hline(	4339.36	, color=color.blue, linestyle=hline.style_solid)
+hline(	4324.40	, color=color.blue, linestyle=hline.style_solid)
+hline(	4309.45	, color=color.blue, linestyle=hline.style_solid)
+hline(	4294.49	, color=color.blue, linestyle=hline.style_solid)
+hline(	4279.54	, color=color.blue, linestyle=hline.style_solid)
+hline(	4264.58	, color=color.blue, linestyle=hline.style_solid)
+hline(	4249.63	, color=color.blue, linestyle=hline.style_solid)
 
-hline(	3880.51	, color=color.blue, linestyle=hline.style_solid)
-hline(	3893.57	, color=color.blue, linestyle=hline.style_solid)
-hline(	3906.64	, color=color.blue, linestyle=hline.style_solid)
-hline(	3919.70	, color=color.blue, linestyle=hline.style_solid)
-hline(	3932.77	, color=color.blue, linestyle=hline.style_solid)
-hline(	3945.83	, color=color.blue, linestyle=hline.style_solid)
-hline(	3958.90	, color=color.blue, linestyle=hline.style_solid)
-hline(	3971.96	, color=color.blue, linestyle=hline.style_solid)
-hline(	3985.03	, color=color.blue, linestyle=hline.style_solid)
-hline(	3998.09	, color=color.blue, linestyle=hline.style_solid)
-hline(	4011.16	, color=color.blue, linestyle=hline.style_solid)
-hline(	4024.22	, color=color.blue, linestyle=hline.style_solid)
-hline(	4037.29	, color=color.blue, linestyle=hline.style_solid)
-hline(	4050.35	, color=color.blue, linestyle=hline.style_solid)
-hline(	4063.42	, color=color.blue, linestyle=hline.style_solid)
-hline(	4076.48	, color=color.blue, linestyle=hline.style_solid)
-hline(	4089.55	, color=color.blue, linestyle=hline.style_solid)
-hline(	4102.61	, color=color.blue, linestyle=hline.style_solid)
-hline(	4115.68	, color=color.blue, linestyle=hline.style_solid)
-hline(	4128.74	, color=color.blue, linestyle=hline.style_solid)
-hline(	4141.81	, color=color.blue, linestyle=hline.style_solid)
-hline(	4154.87	, color=color.blue, linestyle=hline.style_solid)
-hline(	4167.94	, color=color.blue, linestyle=hline.style_solid)
-hline(	4181.00	, color=color.blue, linestyle=hline.style_solid)
-hline(	4194.07	, color=color.blue, linestyle=hline.style_solid)
-hline(	4207.13	, color=color.blue, linestyle=hline.style_solid)
-hline(	4220.20	, color=color.blue, linestyle=hline.style_solid)
-hline(	4233.26	, color=color.blue, linestyle=hline.style_solid)
-hline(	4246.33	, color=color.blue, linestyle=hline.style_solid)
-hline(	4259.39	, color=color.blue, linestyle=hline.style_solid)
-hline(	4272.46	, color=color.blue, linestyle=hline.style_solid)
-hline(	4285.52	, color=color.blue, linestyle=hline.style_solid)
-hline(	4298.59	, color=color.blue, linestyle=hline.style_solid)
-hline(	4311.65	, color=color.blue, linestyle=hline.style_solid)
-hline(	4324.72	, color=color.blue, linestyle=hline.style_solid)
-hline(	4337.78	, color=color.blue, linestyle=hline.style_solid)
-hline(	4350.85	, color=color.blue, linestyle=hline.style_solid)
-hline(	4363.91	, color=color.blue, linestyle=hline.style_solid)
-hline(	4376.97	, color=color.blue, linestyle=hline.style_solid)
+hline(	4354.31	, color=color.blue, linestyle=hline.style_solid)
+hline(	4369.27	, color=color.blue, linestyle=hline.style_solid)
+hline(	4384.22	, color=color.blue, linestyle=hline.style_solid)
+hline(	4399.18	, color=color.blue, linestyle=hline.style_solid)
+hline(	4414.13	, color=color.blue, linestyle=hline.style_solid)
+hline(	4429.09	, color=color.blue, linestyle=hline.style_solid)
+hline(	4444.04	, color=color.blue, linestyle=hline.style_solid)
+hline(	4459.00	, color=color.blue, linestyle=hline.style_solid)
+hline(	4473.95	, color=color.blue, linestyle=hline.style_solid)
+hline(	4488.91	, color=color.blue, linestyle=hline.style_solid)
+hline(	4503.86	, color=color.blue, linestyle=hline.style_solid)
+hline(	4518.82	, color=color.blue, linestyle=hline.style_solid)
+hline(	4533.77	, color=color.blue, linestyle=hline.style_solid)
+hline(	4548.73	, color=color.blue, linestyle=hline.style_solid)
+hline(	4563.68	, color=color.blue, linestyle=hline.style_solid)
+hline(	4578.64	, color=color.blue, linestyle=hline.style_solid)
+hline(	4593.59	, color=color.blue, linestyle=hline.style_solid)
+hline(	4608.55	, color=color.blue, linestyle=hline.style_solid)
+hline(	4623.50	, color=color.blue, linestyle=hline.style_solid)
+hline(	4638.46	, color=color.blue, linestyle=hline.style_solid)
+hline(	4653.41	, color=color.blue, linestyle=hline.style_solid)
+hline(	4668.37	, color=color.blue, linestyle=hline.style_solid)
+hline(	4683.32	, color=color.blue, linestyle=hline.style_solid)
+hline(	4698.28	, color=color.blue, linestyle=hline.style_solid)
+hline(	4713.23	, color=color.blue, linestyle=hline.style_solid)
+hline(	4728.19	, color=color.blue, linestyle=hline.style_solid)
+hline(	4743.14	, color=color.blue, linestyle=hline.style_solid)
+hline(	4758.10	, color=color.blue, linestyle=hline.style_solid)
+hline(	4773.05	, color=color.blue, linestyle=hline.style_solid)
+hline(	4788.01	, color=color.blue, linestyle=hline.style_solid)
+hline(	4802.96	, color=color.blue, linestyle=hline.style_solid)
+hline(	4817.92	, color=color.blue, linestyle=hline.style_solid)
+hline(	4832.87	, color=color.blue, linestyle=hline.style_solid)
+hline(	4847.83	, color=color.blue, linestyle=hline.style_solid)
+hline(	4862.78	, color=color.blue, linestyle=hline.style_solid)
+hline(	4877.74	, color=color.blue, linestyle=hline.style_solid)
+hline(	4892.69	, color=color.blue, linestyle=hline.style_solid)
+hline(	4907.65	, color=color.blue, linestyle=hline.style_solid)
+hline(	4922.60	, color=color.blue, linestyle=hline.style_solid)
+hline(	4937.56	, color=color.blue, linestyle=hline.style_solid)
+hline(	4952.51	, color=color.blue, linestyle=hline.style_solid)
+hline(	4967.47	, color=color.blue, linestyle=hline.style_solid)
+hline(	4982.42	, color=color.blue, linestyle=hline.style_solid)
+hline(	4997.38	, color=color.blue, linestyle=hline.style_solid)
+hline(	5012.33	, color=color.blue, linestyle=hline.style_solid)
+hline(	5027.29	, color=color.blue, linestyle=hline.style_solid)
+hline(	5042.24	, color=color.blue, linestyle=hline.style_solid)
+hline(	5057.20	, color=color.blue, linestyle=hline.style_solid)
+hline(	5072.15	, color=color.blue, linestyle=hline.style_solid)
+hline(	5087.11	, color=color.blue, linestyle=hline.style_solid)

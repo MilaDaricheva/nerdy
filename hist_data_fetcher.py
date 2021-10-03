@@ -20,7 +20,7 @@ class HistDataFetcher:
 
         self.ib.connect('127.0.0.1', 7497, clientId=self.clientID)
 
-        mesContract = Future('MES', '20210917', 'GLOBEX', 'MESU1', '5', 'USD')
+        mesContract = Future('MES', '20211217', 'GLOBEX', 'MESZ1', '5', 'USD')
 
         self.mylog.info("new reqHistoricalData...")
 

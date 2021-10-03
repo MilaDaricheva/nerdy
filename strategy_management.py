@@ -14,7 +14,7 @@ class StrategyManagement:
 
         low = self.bars.iloc[-1]['low']
         high = self.bars.iloc[-1]['high']
-        step = 13
+        step = 14.9
 
         self.min_data = min_data
         self.vp_levels = vp_levels

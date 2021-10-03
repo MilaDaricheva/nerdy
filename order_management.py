@@ -41,8 +41,8 @@ class OrderManagement:
     def shootOneLong(self, t1):
         self.mylog.info("Start Long1")
         lmpPrice = self.specialRound(self.arVPLong + t1)
-        profPrice = self.specialRound(lmpPrice + 30)
-        profPrice0 = self.specialRound(lmpPrice + 100)
+        profPrice = self.specialRound(lmpPrice + 10)
+        profPrice0 = self.specialRound(lmpPrice + 27)
 
         stopPrice = self.specialRound(self.arVPLong - 20)
 
@@ -120,18 +120,19 @@ class OrderManagement:
 
                 self.printLog()
 
-                if self.sm.emaDiff < -2:
+                if self.sm.emaDiff > -4 and self.sm.emaDiff < 0:
                     # Shoot All
                     self.shootOneLong(0)
+                    self.shootTwoThreeLongs(13, 13)
+
                     if self.sm.extremeCond or self.sm.strongCond:
-                        self.shootTwoThreeLongs(13, 13)
                         self.oBucket.rememberTimeDump()
-                else:
+                if self.sm.emaDiff > 0:
                     # Long 1
                     self.shootOneLong(0)
                     # Long 2 and 3
                     self.shootTwoThreeLongs(4, 6)
-            elif self.sm.slowestCond or (self.sm.emaDiff > 1.9 and self.sm.oneStepsFromHigh):
+            elif self.sm.slowestCond or (self.sm.emaDiff > 1 and self.sm.oneStepsFromHigh):
                 # Shoot All with diferent entries
                 self.shootOneLong(0)
                 self.shootTwoThreeLongs(4, 6)
@@ -166,9 +167,12 @@ class OrderManagement:
             if (cond1 or cond2):
                 self.mylog.info("Close All Long, emaDiff")
                 self.mylog.info(self.sm.emaDiff)
-                if (self.sm.emaDiff < -0.7 or self.sm.trendCondS):
+                if (self.sm.emaDiff < -0.7 or self.sm.trendCondS) and self.vpTouches.countShortT() >= 3:
                     # close all positions and cancel all orders
                     self.oBucket.closeAll()
+            if self.sm.emaDiff < -5:
+                # close all positions and cancel all orders
+                self.oBucket.closeAll()
 
     def goDoBusiness(self):
         if self.arVPLong > 0 and self.arVPShort == 0:

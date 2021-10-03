@@ -221,11 +221,11 @@ class AlgoVP:
 
         # main vp levels
         self.vp_levels = []
-        num_vp = 50
-        sVP = 4102.61
+        num_vp = 55
+        sVP = 4249.63
 
         for i in range(num_vp):
-            nextVP = round(sVP+13.065*i, 2)
+            nextVP = round(sVP+14.955*i, 2)
             self.vp_levels.append(nextVP)
         self.mylog.info("---------------------------")
         self.mylog.info("VP levels")
@@ -244,7 +244,7 @@ class AlgoVP:
 
         self.ib.connect('127.0.0.1', 7497, clientId=1)
 
-        self.contract = Future('MES', '20210917', 'GLOBEX', 'MESU1', '5', 'USD')
+        self.contract = Future('MES', '20211217', 'GLOBEX', 'MESZ1', '5', 'USD')
         self.ib.qualifyContracts(self.contract)
 
         if self.ib.isConnected():
