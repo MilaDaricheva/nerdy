@@ -41,8 +41,8 @@ class StrategyManagement:
         self.twoStepsFromHigh = highestHighBig - low > 1.8*step
         self.twoStepsFromLow = high - lowestLowBig > 1.8*step
 
-        self.threeStepsFromHigh = highestHighBig - low > 2.8*step
-        self.threeStepsFromLow = high - lowestLowBig > 2.8*step
+        self.threeStepsFromHigh = highestHighBig - low > 2.7*step
+        self.threeStepsFromLow = high - lowestLowBig > 2.7*step
 
         self.fourStepsFromHigh = highestHighBig - low > 3.7*step
         self.fourStepsFromLow = high - lowestLowBig > 3.7*step

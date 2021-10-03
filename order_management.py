@@ -41,8 +41,8 @@ class OrderManagement:
     def shootOneLong(self, t1):
         self.mylog.info("Start Long1")
         lmpPrice = self.specialRound(self.arVPLong + t1)
-        profPrice = self.specialRound(lmpPrice + 10)
-        profPrice0 = self.specialRound(lmpPrice + 27)
+        profPrice = self.specialRound(lmpPrice + 27)
+        #profPrice0 = self.specialRound(lmpPrice + 27)
 
         stopPrice = self.specialRound(self.arVPLong - 20)
 
@@ -55,14 +55,13 @@ class OrderManagement:
             self.oBucket.setFirstLong(trade)
             self.mylog.info(o)
 
-        bracket0 = self.ib.bracketOrder(action='BUY', quantity=self.scale1Size, limitPrice=lmpPrice, takeProfitPrice=profPrice0, stopLossPrice=stopPrice, tif='GTC')
-        if t1 == 0:
-            bracket0.parent.orderType = 'MKT'
+        #bracket0 = self.ib.bracketOrder(action='BUY', quantity=self.scale1Size, limitPrice=lmpPrice, takeProfitPrice=profPrice0, stopLossPrice=stopPrice, tif='GTC')
+        # if t1 == 0:
+        #    bracket0.parent.orderType = 'MKT'
 
-        for o in bracket0:
-            trade = self.ib.placeOrder(self.contract, o)
-            # self.oBucket.setFirstLong(trade)
-            self.mylog.info(o)
+        # for o in bracket0:
+        #    trade = self.ib.placeOrder(self.contract, o)
+        #    self.mylog.info(o)
 
         #beStop = self.arVPLong - 3
         # self.oBucket.rememberBEstop(self.specialRound(beStop))
@@ -79,13 +78,13 @@ class OrderManagement:
 
         stopPrice = self.specialRound(self.arVPLong - 20)
 
-        self.mylog.info("Start Long2")
+        #self.mylog.info("Start Long2")
 
-        bracket2 = self.ib.bracketOrder(action='BUY', quantity=self.scale2Size, limitPrice=lmpPrice2, takeProfitPrice=profPrice2, stopLossPrice=stopPrice, tif='GTC')
-        for o in bracket2:
-            trade = self.ib.placeOrder(self.contract, o)
-            self.oBucket.setSecondLong(trade)
-            self.mylog.info(o)
+        #bracket2 = self.ib.bracketOrder(action='BUY', quantity=self.scale2Size, limitPrice=lmpPrice2, takeProfitPrice=profPrice2, stopLossPrice=stopPrice, tif='GTC')
+        # for o in bracket2:
+        #    trade = self.ib.placeOrder(self.contract, o)
+        #    self.oBucket.setSecondLong(trade)
+        #    self.mylog.info(o)
 
         self.mylog.info("Start Long3")
 
