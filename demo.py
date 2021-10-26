@@ -206,8 +206,8 @@ class AlgoVP:
                     if histDataOk and rtDataOk and hrDataOk:
                         #self.mylog.info("all data ok")
                         # self.mylog.info(nowTime)
-                        rtd = RealTimeData(bars, self.min_data, self.vp_levels, self.mylog)
-                        sm = StrategyManagement(bars, self.min_data, self.vp_levels, self.mylog)
+                        rtd = RealTimeData(bars, self.min_data, self.hr_data, self.vp_levels, self.mylog)
+                        sm = StrategyManagement(bars, self.min_data, self.hr_data, self.vp_levels, self.mylog)
                         om = OrderManagement(self.ib, self.contract, sm, self.oBucket, rtd, self.vpTouches, self.mylog)
                         om.goDoBusiness()
                     else:

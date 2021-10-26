@@ -7,7 +7,7 @@ import pandas as pd
 
 class StrategyManagement:
 
-    def __init__(self, bars, min_data, vp_levels, logger):
+    def __init__(self, bars, min_data, hr_data, vp_levels, logger):
         self.mylog = logger
 
         self.bars = dropna(util.df(bars))
@@ -17,6 +17,7 @@ class StrategyManagement:
         step = 14.9
 
         self.min_data = min_data
+        self.hr_data = hr_data
         self.vp_levels = vp_levels
 
         highestHighBig = self.min_data.h_highs_b
@@ -25,6 +26,8 @@ class StrategyManagement:
         self.emaUp = self.min_data.getiLoc(-1)['ema_ind'] > self.min_data.getiLoc(-60)['ema_ind']
         self.emaDown = self.min_data.getiLoc(-1)['ema_ind'] < self.min_data.getiLoc(-60)['ema_ind']
         self.emaDiff = self.min_data.getiLoc(-1)['ema_ind'] - self.min_data.getiLoc(-120)['ema_ind']
+
+        self.hrDowntrend = self.hr_data.getiLoc(-1)['hr_ema'] + step > high
 
         self.emaD0 = self.emaDiff < 0.7 and self.emaDiff > -0.7
         self.emaD1 = self.emaDiff < 1 and self.emaDiff > -1

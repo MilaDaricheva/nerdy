@@ -34,11 +34,12 @@ class RealTimeData:
                 aroundVPLevel = vp[i]
         return aroundVPLevel
 
-    def __init__(self, bars, min_data, vp_levels, logger):
+    def __init__(self, bars, min_data, hr_data, vp_levels, logger):
         self.mylog = logger
         # 12 bars per min
         self.bars = dropna(util.df(bars))
         self.min_data = min_data
+        self.hr_data = hr_data
         self.vp_levels = vp_levels
 
     def printLastN(self, n):

@@ -27,6 +27,9 @@ class OrderManagement:
         self.mylog.info("emaDiff")
         self.mylog.info(self.sm.emaDiff)
 
+        self.mylog.info("HR downtrend")
+        self.mylog.info(self.sm.hrDowntrend)
+
         self.mylog.info("---------------------------")
 
     def specialRound(self, pr):
@@ -41,10 +44,13 @@ class OrderManagement:
     def shootOneLong(self, t1):
         self.mylog.info("Start Long1")
         lmpPrice = self.specialRound(self.arVPLong + t1)
-        profPrice = self.specialRound(lmpPrice + 27)
+        profPrice = self.specialRound(lmpPrice + 14)
         #profPrice0 = self.specialRound(lmpPrice + 27)
 
         stopPrice = self.specialRound(self.arVPLong - 20)
+
+        if self.sm.hrDowntrend:
+            stopPrice = self.specialRound(self.arVPLong - 30)
 
         bracket = self.ib.bracketOrder(action='BUY', quantity=self.scale1Size, limitPrice=lmpPrice, takeProfitPrice=profPrice, stopLossPrice=stopPrice, tif='GTC')
         if t1 == 0:
@@ -74,9 +80,12 @@ class OrderManagement:
         profPrice2 = self.specialRound(lmpPrice2 + 10)
 
         lmpPrice3 = self.specialRound(self.arVPLong - t3)
-        profPrice3 = self.specialRound(lmpPrice3 + 14)
+        profPrice3 = self.specialRound(lmpPrice3 + 10)
 
         stopPrice = self.specialRound(self.arVPLong - 20)
+
+        if self.sm.hrDowntrend:
+            stopPrice = self.specialRound(self.arVPLong - 30)
 
         #self.mylog.info("Start Long2")
 
@@ -120,21 +129,32 @@ class OrderManagement:
                 self.printLog()
 
                 if self.sm.emaDiff > -4 and self.sm.emaDiff < 0:
-                    # Shoot All
-                    self.shootOneLong(0)
-                    self.shootTwoThreeLongs(13, 13)
-
+                    if not self.sm.hrDowntrend:
+                        # Shoot All
+                        self.shootOneLong(0)
+                        self.shootTwoThreeLongs(13, 13)
+                    else:
+                        self.shootOneLong(12)
+                        self.shootTwoThreeLongs(25, 25)
                     if self.sm.extremeCond or self.sm.strongCond:
                         self.oBucket.rememberTimeDump()
                 if self.sm.emaDiff > 0:
-                    # Long 1
-                    self.shootOneLong(0)
-                    # Long 2 and 3
-                    self.shootTwoThreeLongs(4, 6)
+                    if not self.sm.hrDowntrend:
+                        # Long 1
+                        self.shootOneLong(0)
+                        # Long 2 and 3
+                        self.shootTwoThreeLongs(4, 6)
+                    else:
+                        self.shootOneLong(12)
+                        self.shootTwoThreeLongs(25, 25)
             elif self.sm.slowestCond or (self.sm.emaDiff > 1 and self.sm.oneStepsFromHigh):
-                # Shoot All with diferent entries
-                self.shootOneLong(0)
-                self.shootTwoThreeLongs(4, 6)
+                if not self.sm.hrDowntrend:
+                    # Shoot All with diferent entries
+                    self.shootOneLong(0)
+                    self.shootTwoThreeLongs(4, 6)
+                else:
+                    self.shootOneLong(12)
+                    self.shootTwoThreeLongs(25, 25)
 
         # Adjust orders
 
