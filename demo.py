@@ -1,6 +1,7 @@
 #from ta.utils import dropna
 from ib_insync import IB, Future, util
 from hist_data_fetcher import HistDataFetcher
+from hr_data_fetcher import HRDataFetcher
 from rt_data import RealTimeData
 from strategy_management import StrategyManagement
 from order_management import OrderManagement
@@ -30,11 +31,20 @@ class AlgoVP:
             self.mylog.info(self.clientID)
             self.hist_data_fetcher = HistDataFetcher(self.mylog, self.clientID)
 
+    def setUpHRData(self):
+        if not self.hr_data_fetcher and not self.deadZone():
+            self.mylog.info("---------------------------")
+            self.mylog.info("setUpHRData + deadZone")
+            self.mylog.info(self.deadZone())
+            self.mylog.info(self.clientID)
+            self.hr_data_fetcher = HRDataFetcher(self.mylog, self.clientID)
+
     def setUpData(self):
         self.mylog.info("---------------------------")
         self.mylog.info("setUpData")
 
         self.setUpHistData()
+        self.setUpHRData()
 
         self.rt_bars = None
         self.rt_bars = self.ib.reqRealTimeBars(self.contract, 5, 'MIDPOINT', False)
@@ -103,11 +113,14 @@ class AlgoVP:
             self.mylog.info("Hist data nah nah")
             self.hist_data_fetcher.killFetcher()
             self.hist_data_fetcher = None
+            self.hr_data_fetcher.killFetcher()
+            self.hr_data_fetcher = None
             self.clientID = self.clientID + 1
         if (errorCode == 2106 or errorCode == 1101 or errorCode == 1102) and not self.hist_data_fetcher and timeGap:
             self.mylog.info("Hist data seems ok")
             self.requestStarted = datetime.now(tz=tz.tzlocal())
             util.schedule(open_time, self.setUpHistData)
+            util.schedule(open_time, self.setUpHRData)
 
     def onConnectedEvent(self):
         self.mylog.info("---------------------------")
@@ -162,29 +175,35 @@ class AlgoVP:
             timeGap = datetime.now(tz=tz.tzlocal()) - self.requestStarted >= timedelta(minutes=5)
 
             if self.timeIsOk() and not self.deadZone():
-                if not self.hist_data_fetcher:
+                if not (self.hist_data_fetcher or self.hr_data_fetcher):
                     if timeGap:
                         self.mylog.info("---------------------------")
                         self.mylog.info("No fetcher, create one")
                         self.requestStarted = datetime.now(tz=tz.tzlocal())
                         self.setUpHistData()
+                        self.setUpHRData()
                 else:
                     self.min_data = self.hist_data_fetcher.getMinData()
+                    self.hr_data = self.hr_data_fetcher.getHRData()
 
                     cuttentBarTime = bars[-1].time.astimezone(tz.tzutc())
                     nowTime = datetime.now(tz=tz.tzutc())
 
                     histBarTime = self.min_data.timeCreated
+                    hrBarTime = self.hr_data.timeCreated
+
                     # self.mylog.info("self.min_data.timeCreated")
                     # self.mylog.info(histBarTime)
 
                     twSec = timedelta(seconds=20)
                     twoMin = timedelta(minutes=2)
+                    twoHr = timedelta(hours=2)
 
                     rtDataOk = nowTime - twSec <= cuttentBarTime
                     histDataOk = nowTime - twoMin <= histBarTime
+                    hrDataOk = nowTime - twoHr <= hrBarTime
 
-                    if histDataOk and rtDataOk:
+                    if histDataOk and rtDataOk and hrDataOk:
                         #self.mylog.info("all data ok")
                         # self.mylog.info(nowTime)
                         rtd = RealTimeData(bars, self.min_data, self.vp_levels, self.mylog)
@@ -192,14 +211,18 @@ class AlgoVP:
                         om = OrderManagement(self.ib, self.contract, sm, self.oBucket, rtd, self.vpTouches, self.mylog)
                         om.goDoBusiness()
                     else:
-                        if timeGap and not histDataOk:
+                        if timeGap and not (histDataOk or hrDataOk):
                             self.mylog.info("---------------------------")
-                            self.mylog.info("Hist Data not OK, kill fetcher, UTC Time")
+                            self.mylog.info("Hist or HR Data not OK, kill fetcher, UTC Time")
                             self.mylog.info(nowTime)
                             self.mylog.info(timeGap)
                             if self.hist_data_fetcher:
                                 self.hist_data_fetcher.killFetcher()
                                 self.hist_data_fetcher = None
+                                self.clientID = self.clientID + 1
+                            if self.hr_data_fetcher:
+                                self.hr_data_fetcher.killFetcher()
+                                self.hr_data_fetcher = None
                                 self.clientID = self.clientID + 1
 
     def __init__(self):
@@ -237,6 +260,9 @@ class AlgoVP:
 
         self.hist_data_fetcher = None
         self.min_data = None
+
+        self.hr_data_fetcher = None
+        self.hr_data = None
 
         self.clientID = 2
 

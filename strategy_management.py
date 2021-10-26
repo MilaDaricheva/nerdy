@@ -35,14 +35,14 @@ class StrategyManagement:
         self.emaD6 = self.emaDiff < 6 and self.emaDiff > -6
         self.emaD10 = self.emaDiff < 10 and self.emaDiff > -10
 
-        self.oneStepsFromHigh = highestHighBig - low > 0.9*step
-        self.oneStepsFromLow = high - lowestLowBig > 0.9*step
+        self.oneStepsFromHigh = highestHighBig - low > 0.85*step
+        self.oneStepsFromLow = high - lowestLowBig > 0.85*step
 
         self.twoStepsFromHigh = highestHighBig - low > 1.8*step
         self.twoStepsFromLow = high - lowestLowBig > 1.8*step
 
-        self.threeStepsFromHigh = highestHighBig - low > 2.7*step
-        self.threeStepsFromLow = high - lowestLowBig > 2.7*step
+        self.threeStepsFromHigh = highestHighBig - low > 2.8*step
+        self.threeStepsFromLow = high - lowestLowBig > 2.8*step
 
         self.fourStepsFromHigh = highestHighBig - low > 3.7*step
         self.fourStepsFromLow = high - lowestLowBig > 3.7*step

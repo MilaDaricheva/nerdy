@@ -95,7 +95,7 @@ class OrderManagement:
             self.mylog.info(o)
 
         # remember B/E price
-        #beStop = (lmpPrice2 + lmpPrice3)/2
+        # beStop = (lmpPrice2 + lmpPrice3)/2
         # self.oBucket.rememberBEstop(self.specialRound(beStop))
 
     def manageLongs(self):
