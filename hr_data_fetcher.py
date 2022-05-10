@@ -1,5 +1,6 @@
 from ib_insync import IB, Future
 from hr_data import HRData
+from fut_info import FutInfo
 
 
 class HRDataFetcher:
@@ -18,9 +19,9 @@ class HRDataFetcher:
 
         self.ib = IB()
 
-        self.ib.connect('127.0.0.1', 7497, clientId=self.clientID)
+        self.ib.connect('127.0.0.1', FutInfo.myPort(), clientId=self.clientID)
 
-        mesContract = Future('MES', '20211217', 'GLOBEX', 'MESZ1', '5', 'USD')
+        mesContract = Future('MES', FutInfo.expir(), 'GLOBEX', FutInfo.symb(), '5', 'USD')
 
         self.mylog.info("new reqHistoricalData...")
 

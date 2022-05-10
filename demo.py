@@ -6,6 +6,7 @@ from rt_data import RealTimeData
 from strategy_management import StrategyManagement
 from order_management import OrderManagement
 from orders_bucket import OrdersBucket
+from fut_info import FutInfo
 from vp_touches import VpTouches
 from datetime import datetime, timedelta
 from dateutil import tz
@@ -21,7 +22,7 @@ class AlgoVP:
         self.mylog.info("---------------------------")
         self.mylog.info("reConnect")
         if not self.ib.isConnected():
-            self.ib.connect('127.0.0.1', 7497, clientId=1)
+            self.ib.connect('127.0.0.1', FutInfo.myPort(), clientId=1)
 
     def setUpHistData(self):
         if not self.hist_data_fetcher and not self.deadZone():
@@ -268,9 +269,9 @@ class AlgoVP:
 
         self.ib = IB()
 
-        self.ib.connect('127.0.0.1', 7497, clientId=1)
+        self.ib.connect('127.0.0.1', FutInfo.myPort(), clientId=1)
 
-        self.contract = Future('MES', '20211217', 'GLOBEX', 'MESZ1', '5', 'USD')
+        self.contract = Future('MES', FutInfo.expir(), 'GLOBEX', FutInfo.symb(), '5', 'USD')
         self.ib.qualifyContracts(self.contract)
 
         if self.ib.isConnected():
