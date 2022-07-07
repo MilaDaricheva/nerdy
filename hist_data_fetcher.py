@@ -26,8 +26,8 @@ class HistDataFetcher:
         self.mylog.info("new reqHistoricalData...")
 
         self.min_bars = self.ib.reqHistoricalData(
-            mesContract, endDateTime='', durationStr='2 D',
-            barSizeSetting='1 min', whatToShow='MIDPOINT', useRTH=False,
+            mesContract, endDateTime='', durationStr='4 D',
+            barSizeSetting='5 mins', whatToShow='MIDPOINT', useRTH=False,
             formatDate=1,
             keepUpToDate=True)
 

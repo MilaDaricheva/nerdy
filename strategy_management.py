@@ -29,6 +29,9 @@ class StrategyManagement:
 
         self.hrDowntrend = self.hr_data.getiLoc(-1)['hr_ema'] + step > high
 
+        self.crossUp = self.min_data.getiLoc(-1)['ema_ind'] > self.hr_data.getiLoc(-1)['hr_ema'] and self.min_data.getiLoc(-3)['ema_ind'] < self.hr_data.getiLoc(-1)['hr_ema']
+        self.crossDown = self.min_data.getiLoc(-1)['ema_ind'] < self.hr_data.getiLoc(-1)['hr_ema'] and self.min_data.getiLoc(-3)['ema_ind'] > self.hr_data.getiLoc(-1)['hr_ema']
+
         self.emaD0 = self.emaDiff < 0.7 and self.emaDiff > -0.7
         self.emaD1 = self.emaDiff < 1 and self.emaDiff > -1
         self.emaD2 = self.emaDiff < 2 and self.emaDiff > -2

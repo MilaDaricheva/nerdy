@@ -53,6 +53,10 @@ class OrdersBucket:
         return nowTime - fillTime
 
     def cancelAll(self):
+        self.mylog.info("---------------------------")
+        self.mylog.info('Open Orders')
+        self.mylog.info(self.ib.openOrders())
+
         if self.ib.openTrades() and (self.firstLong or self.firstShort):
             self.mylog.info("---------------------------")
             self.mylog.info('Cancel All')
@@ -62,12 +66,12 @@ class OrdersBucket:
             #cancelDelay = 1
 
             for opT in self.ib.openTrades():
-                self.mylog.info(opT)
-                self.mylog.info(opT.contract.symbol)
-                self.mylog.info(opT.isDone())
-                self.mylog.info(opT.order.ocaGroup)
-                self.mylog.info(opT.order.orderType)
-                self.mylog.info(opT.orderStatus.status)
+                # self.mylog.info(opT)
+                # self.mylog.info(opT.contract.symbol)
+                # self.mylog.info(opT.isDone())
+                # self.mylog.info(opT.order.ocaGroup)
+                # self.mylog.info(opT.order.orderType)
+                # self.mylog.info(opT.orderStatus.status)
 
                 if opT.orderStatus.status == 'Submitted' and not opT.fills and opT.contract.symbol == 'MES':
                     self.mylog.info('Sending Cancel')
@@ -110,19 +114,6 @@ class OrdersBucket:
 
         self.emptyPosObject()
 
-    def adjustBraket(self, profitPrice, stopPrice):
-        self.mylog.info("---------------------------")
-        self.mylog.info('Adjust Braket')
-
-        self.cancelAll()
-        self.ib.sleep(5)
-        # create OCA
-        self.OCObraket(profitPrice, stopPrice)
-        self.secondLong = []
-        self.thirdLong = []
-        self.secondShort = []
-        self.thirdShort = []
-
     def OCObraket(self, profitPrice, stopPrice):
         self.mylog.info("---------------------------")
         self.mylog.info('OCO Braket')
@@ -151,32 +142,6 @@ class OrdersBucket:
 
         for o in oco:
             self.ib.placeOrder(self.contract, o)
-
-    def adjustTarget(self, newT):
-        self.mylog.info("---------------------------")
-        self.mylog.info('New Target')
-        self.mylog.info(newT)
-
-        for opT in self.ib.openTrades():
-            self.mylog.info(opT.order.orderId)
-            self.mylog.info(self.firstLong[1].order.orderId)
-            if opT.order.orderId == self.firstLong[1].order.orderId:
-                self.mylog.info('Setting New Target')
-                self.firstLong[1].order.lmtPrice = self.rememberVPL + 75
-                self.ib.placeOrder(self.contract, self.firstLong[1].order)
-
-    def adjustTargetShort(self, newT):
-        self.mylog.info("---------------------------")
-        self.mylog.info('New Target Short')
-        self.mylog.info(newT)
-
-        for opT in self.ib.openTrades():
-            self.mylog.info(opT.order.orderId)
-            self.mylog.info(self.firstShort[1].order.orderId)
-            if opT.order.orderId == self.firstShort[1].order.orderId:
-                self.mylog.info('Setting New Target')
-                self.firstShort[1].order.lmtPrice = self.rememberVPL - 75
-                self.ib.placeOrder(self.contract, self.firstShort[1].order)
 
     def __init__(self, ib, contract, logger):
         self.mylog = logger

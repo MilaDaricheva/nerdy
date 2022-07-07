@@ -5,11 +5,11 @@ class FutInfo:
 
     @staticmethod
     def expir():
-        return '20220617'
+        return '20220916'
 
     @staticmethod
     def symb():
-        return 'MESM2'
+        return 'MESU2'
 
     # def __init__(self):
     #    self.myPort = 7497

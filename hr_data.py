@@ -11,7 +11,7 @@ class HRData:
         return round(x, 2)
 
     def fillEma(self):
-        hr_ema = EMAIndicator(close=self.bars['close'], window=200, fillna=True)
+        hr_ema = EMAIndicator(close=self.bars['close'], window=120, fillna=True)
         self.bars['hr_ema'] = hr_ema.ema_indicator().apply(self.transform_ema)
 
     def __init__(self, bars, logger):

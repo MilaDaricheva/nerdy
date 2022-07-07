@@ -68,33 +68,6 @@ class AlgoVP:
             self.oBucket.cancelAll()
             self.oBucket.emptyPosObject()
 
-        # if trade.order.action == 'BUY' and self.ib.positions():
-            # scale out of short happened
-        #    if self.ib.positions()[0].position == -self.oBucket.scale1Size:
-        #        self.mylog.info("scale out of 2d short happened")
-            # move stops tighter
-        #        self.mylog.info("move stops lmpPrice1 + 10")
-        #        self.oBucket.adjustBraket(self.oBucket.rememberVPL - 23, self.oBucket.rememberVPL + 10)
-
-        #    if self.ib.positions()[0].position == -(self.oBucket.scale1Size + self.oBucket.scale2Size):
-        #        self.mylog.info("scale out of 3d short happened")
-            # move stops tighter
-        #        self.mylog.info("move stops (lmpPrice2 + lmpPrice3)/2")
-        #        self.oBucket.adjustBraket(self.oBucket.rememberVPL - 23, self.oBucket.beStop)
-
-        # if trade.order.action == 'SELL' and self.ib.positions():
-            # scale out of long happened
-        #    if self.ib.positions()[0].position == self.oBucket.scale1Size:
-        #        self.mylog.info("scale out of 2d long happened")
-            # move stops tighter
-        #        self.mylog.info("move stops lmpPrice1 - 10")
-        #        self.oBucket.adjustBraket(self.oBucket.rememberVPL + 23, self.oBucket.rememberVPL - 10)
-        #    if self.ib.positions()[0].position == self.oBucket.scale1Size + self.oBucket.scale2Size:
-        #        self.mylog.info("scale out of 3d long happened")
-        #        # move stops tighter
-        #        self.mylog.info("move stops (lmpPrice2 + lmpPrice3)/2")
-        #        self.oBucket.adjustBraket(self.oBucket.rememberVPL + 23, self.oBucket.beStop)
-
     def onErrorEvent(self, reqId, errorCode, errorString, contract):
         self.mylog.info("---------------------------")
         self.mylog.info("My error handler here")
@@ -183,7 +156,7 @@ class AlgoVP:
                         self.requestStarted = datetime.now(tz=tz.tzlocal())
                         self.setUpHistData()
                         self.setUpHRData()
-                else:
+                elif self.hist_data_fetcher is not None and self.hr_data_fetcher is not None:
                     self.min_data = self.hist_data_fetcher.getMinData()
                     self.hr_data = self.hr_data_fetcher.getHRData()
 
@@ -197,8 +170,8 @@ class AlgoVP:
                     # self.mylog.info(histBarTime)
 
                     twSec = timedelta(seconds=20)
-                    twoMin = timedelta(minutes=2)
-                    twoHr = timedelta(hours=2)
+                    twoMin = timedelta(minutes=12)
+                    twoHr = timedelta(minutes=12)
 
                     rtDataOk = nowTime - twSec <= cuttentBarTime
                     histDataOk = nowTime - twoMin <= histBarTime

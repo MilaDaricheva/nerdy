@@ -16,7 +16,7 @@ class HistData:
         return round(x, 2)
 
     def fillEma(self):
-        ema_ind = EMAIndicator(close=self.bars['close'], window=540, fillna=True)
+        ema_ind = EMAIndicator(close=self.bars['close'], window=54, fillna=True)
         self.bars['ema_ind'] = ema_ind.ema_indicator().apply(self.transform_ema)
 
     def fillStoch(self, w, sl1, sl2):
